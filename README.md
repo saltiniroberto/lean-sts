@@ -295,6 +295,16 @@ and works in namespace `Majorum`.
 PDF is not kept here; statements cite the paper's numbered theorems and definitions, which are
 stable, rather than page or line numbers.
 
+**An example over `RealStsMulticastMultisetLog`, in another repository (draft).** The branch
+[`goldilocks-realtime-draft`](https://github.com/saltiniroberto/decoupled-consensus-lean/tree/goldilocks-realtime-draft)
+of `decoupled-consensus-lean` formalizes the Goldilocks consensus protocol over this flavour: the
+protocol written as a protocol of the framework, its correctness on runs in which every node has
+its own clock and time is real-valued, and seven protocol-agnostic statements on the runs of any
+protocol of the framework, with Goldilocks's claims that its runs satisfy them. It is work in
+progress: statements 5 to 7 on runs are proved for Goldilocks, statements 1 to 4 are stated. The
+branch carries its own copy of the flavour, under its earlier name `RStsVariant2`, rather than
+importing this package.
+
 
 ## Names
 
