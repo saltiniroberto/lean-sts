@@ -38,6 +38,14 @@ globs = ["StsConditionSplit", "StsConditionSplit.+"]
 name = "StsRelationalSetLog"
 globs = ["StsRelationalSetLog", "StsRelationalSetLog.+"]
 
+# the variant with per-node clocks moved by their own environment step (`setClock`), copied from the
+# `decoupled-consensus-lean` repository's `experiments/r-sts-variant-2/`; what changed against its parent is in
+# `RStsVariant2/CHANGES.md`. Imports Mathlib only.
+[[lean_lib]]
+name = "RStsVariant2"
+globs = ["RStsVariant2", "RStsVariant2.+"]
+leanOptions = { autoImplicit = false, relaxedAutoImplicit = false }
+
 # A worked example, not a flavour: the Majorum protocol model, over the suggested flavour.
 # `Examples/<flavour>/<protocol>` is the layout, so a second example over a different flavour
 # sits beside this one without either knowing about the other.
