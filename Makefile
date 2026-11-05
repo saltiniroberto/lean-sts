@@ -1,6 +1,6 @@
 # One target per flavour: sorry/admit/native_decide check, then build. There is deliberately
 # no target that checks all of them -- the flavours share nothing, so a sweep only proves that
-# four things you did not touch still compile.
+# five things you did not touch still compile.
 
 FLAVOURS := StsMultisetLog StsStepInductive StsReactionInLabel StsConditionSplit StsRelationalSetLog RealStsMulticastMultisetLog
 

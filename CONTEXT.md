@@ -1164,3 +1164,10 @@ semantics no longer needs `AwakeHonest`; the fine model (`Spec/Protocol.lean`) i
 A stronger enabling condition removes executions, so universal statements over executions
 keep holding; consumers that construct executions must show their acting nodes are outside
 `adv`.
+
+## `RealStsMulticastMultisetLog` added, the suggested flavour (2026-11-05)
+
+A sixth flavour: real time as a stamp per configuration of an execution, a clock per node moved by
+its own environment step `setClock`, crashes with memory and disk, multicast sends over a multiset
+log, and every timing assumption a condition on executions. The README now points newcomers at it;
+`StsMultisetLog` stays the most developed of the five global-time flavours, its API fixed.

@@ -18,9 +18,9 @@ public import StsMultisetLog.Examples.CustomEvents
 /-!
 # A framework for message-passing distributed protocols — multiset log
 
-**The suggested flavour**, and the most general of the five: it is the only one carrying the
-full set of proofs, and it is where new work happens, so its API is the one treated as fixed —
-a rename or a retyping of anything it exports is announced, not slipped in. Its own `Example`,
+**The most developed of the five global-time flavours**: it is the only one of them carrying the
+full set of proofs, so its API is the one treated as fixed — a rename or a retyping of anything
+it exports is announced, not slipped in. Its own `Example`,
 `CustomEvents` and `Models` files exercise it, so `make StsMultisetLog` checks it standalone.
 
 It is organized by role — `Spec/` states the model, `Analysis/` proves things about it,

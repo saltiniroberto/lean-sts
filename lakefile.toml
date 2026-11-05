@@ -46,7 +46,7 @@ name = "RealStsMulticastMultisetLog"
 globs = ["RealStsMulticastMultisetLog", "RealStsMulticastMultisetLog.+"]
 leanOptions = { autoImplicit = false, relaxedAutoImplicit = false }
 
-# A worked example, not a flavour: the Majorum protocol model, over the suggested flavour.
+# A worked example, not a flavour: the Majorum protocol model, over `StsMultisetLog`.
 # `Examples/<flavour>/<protocol>` is the layout, so a second example over a different flavour
 # sits beside this one without either knowing about the other.
 [[lean_lib]]

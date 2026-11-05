@@ -1,6 +1,6 @@
 # sts-framework
 
-Five flavours of a protocol-independent framework for message-passing distributed protocols,
+Six flavours of a protocol-independent framework for message-passing distributed protocols,
 in Lean 4. One directory per flavour, plus a root module per flavour (`StsMultisetLog.lean`). Module
 roots are the flavour names; namespaces are `Framework.<Flavour>`. See
 [README.md](README.md) for what each flavour is and its status.
@@ -16,11 +16,14 @@ experiment. If a flavour needs something another one has, copy it.
 [CONTEXT.md](CONTEXT.md) and say in the README what design that flavour isolates. The
 comparison is the evidence for a design decision and outlives the code that produced it.
 
-**The suggested flavour is no longer an experiment.** That is `StsMultisetLog`, the one the
-README points newcomers at. Treat its API as fixed: renaming or retyping anything it exports is
-a change that has to be announced, with the affected declarations listed in the reply. The other
-four have already answered their question, so changing their *design* helps nobody — leave that
-as the record it is.
+**The suggested flavour is `RealStsMulticastMultisetLog`**, the one the README points newcomers
+at: real time, a clock per node moved by its own step, multicast sends.
+
+**`StsMultisetLog` is no longer an experiment.** It is the most developed of the five global-time
+flavours. Treat its API as fixed: renaming or retyping anything it exports is a change that has to
+be announced, with the affected declarations listed in the reply. The other four have already
+answered their question, so changing their *design* helps nobody — leave that as the record it
+is.
 
 ## Proof discipline
 
