@@ -6,17 +6,18 @@ public import RealStsMulticastMultisetLog.Spec.Execution
 /-!
 # Observables: what a condition on executions reads of an execution, as a class
 
-The conditions on executions of `RealStsMulticastMultisetLog.Spec.Conditions` read a run only through a few
-readings: the action of each step, the real time at which each configuration is entered, and, in
-each configuration, each node's clock, each node's local state (whether it is known, and what it
-is), each node's view, the sent envelopes, the corrupted set and the crashed set. The class
-`Observable` names exactly these readings, and nothing else: an observable has no
-protocol and no step relation. Each condition is written once over the class, so once for every
-type of execution that provides these readings.
+The conditions on executions of `RealStsMulticastMultisetLog.Spec.Conditions` read a run only
+through a few readings: the action of each step, the real time at which each configuration is
+entered, and, in each configuration, each node's clock, each node's local state (whether it is
+known, and what it is), each node's view, the sent envelopes, the corrupted set and the crashed set.
+The class `Observable` names exactly these readings, and nothing else: an observable has no protocol
+and no step relation. Each condition is written once over the class, so once for every type of
+execution that provides these readings.
 
-None of this is part of the bare framework. The bare framework is `RealStsMulticastMultisetLog.Spec.Protocol`
-(states and steps) and `RealStsMulticastMultisetLog.Spec.Execution` (executions); this page changes neither. It
-gives two instances of the class:
+None of this is part of the bare framework. The bare framework is
+`RealStsMulticastMultisetLog.Spec.Protocol` (states and steps) and
+`RealStsMulticastMultisetLog.Spec.Execution` (executions); this page changes neither. It gives two
+instances of the class:
 
 * `Exec Pr`, the executions of a protocol `Pr`: each reading is the run's own (`x.lbl j`,
   `x.stamp i`, `x[i].clock p`, `x[i][p]`, `x[i].view p`, `x[i].sent`, `x[i].adv`,
@@ -26,13 +27,14 @@ gives two instances of the class:
   `x` as observed, with `f` the map from a local state to `V`.
 
 The local state is read through `state`, of a type `L` that the instance fixes: on `Exec Pr` it is
-`Local Node Msg NodeState`, on an observed run it is `V`. A condition that reads what a node's state holds
-(the blocks it holds, what it serves to a peer, the committee information it has) takes that
+`Local Node Msg NodeState`, on an observed run it is `V`. A condition that reads what a node's state
+holds (the blocks it holds, what it serves to a peer, the committee information it has) takes that
 reading as a parameter over `L`.
 
-`HonestG` and `InForceG` are the two readings of `RealStsMulticastMultisetLog.Spec.Execution`, `Execution.Honest`
-and `Execution.InForce`, written over the class. The suffix `G` marks a definition written over any
-type with an `Observable`; the definitions of `RealStsMulticastMultisetLog.Spec.Execution` keep their names.
+`HonestG` and `InForceG` are the two readings of `RealStsMulticastMultisetLog.Spec.Execution`,
+`Execution.Honest` and `Execution.InForce`, written over the class. The suffix `G` marks a
+definition written over any type with an `Observable`; the definitions of
+`RealStsMulticastMultisetLog.Spec.Execution` keep their names.
 -/
 
 set_option autoImplicit false
@@ -42,8 +44,8 @@ namespace Framework.RealStsMulticastMultisetLog
 /-- The questions a condition may ask about a history: what happened at each step, when it
     happened, and what each node had seen. Runs and observed runs are observable.
 
-    `Observable X Node Msg L Ev`: the executions `x : X` are observables. Not part
-    of the bare framework: no step of the framework reads it.
+    `Observable X Node Msg L Ev`: the executions `x : X` are observables. Not part of the bare
+    framework: no step of the framework reads it.
 
     An observable has no protocol and no step relation. It has only what the conditions on
     executions read: the action of each step, and, for each configuration, the real time at which it
@@ -64,7 +66,8 @@ namespace Framework.RealStsMulticastMultisetLog
 class Observable (X : Type) (Node Msg L Ev : outParam Type) where
   /-- The action of step `j`. -/
   lbl : X → Nat → Action Node Msg Ev
-  /-- The real time at which configuration `i` is entered; step `i` is taken at `stamp x (i + 1)`. -/
+  /-- The real time at which configuration `i` is entered; step `i` is taken at
+      `stamp x (i + 1)`. -/
   stamp : X → Nat → ℝ
   /-- Node `p`'s clock reading in configuration `i`: `some t` while its clock exists, `none`
       otherwise. -/
@@ -98,9 +101,9 @@ instance {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
   adv x i := x[i].adv
   crashed x i := x[i].crashed
 
-/-- A configuration of an observed run: the fields of a configuration of `RealStsMulticastMultisetLog.Spec.Protocol`, with
-    a node's value `V` in place of its local state. Not part of the bare framework: no step relation
-    reads it.
+/-- A configuration of an observed run: the fields of a configuration of
+    `RealStsMulticastMultisetLog.Spec.Protocol`, with a node's value `V` in place of its local
+    state. Not part of the bare framework: no step relation reads it.
 
     Read aloud: each node's value, if known, each node's clock reading, if its clock exists, each
     node's view, the envelopes sent, the corrupted set and the crashed set. -/
@@ -121,8 +124,8 @@ structure TraceConfig (Node Msg V : Type) where
 /-- One history that answers those questions: a run with each node's private state hidden, only
     what is read of it kept. It is `Observable`.
 
-    An observed run is a sequence of configurations (`TraceConfig`), the action of each step, and the
-    real time each configuration is entered, with the three conditions on the real time that an
+    An observed run is a sequence of configurations (`TraceConfig`), the action of each step, and
+    the real time each configuration is entered, with the three conditions on the real time that an
     `Execution` has (it never goes back, it never stops, it starts at `0`). There is no step
     relation: nothing ties a configuration to the next. A node's private state is its local state;
     what is read of it is a value of the type `V`. Not part of the bare framework.
@@ -156,8 +159,8 @@ instance {Node Msg Ev V : Type} : Observable (ObservedRun Node Msg Ev V) Node Ms
   crashed y i := (y.cfg i).crashed
 
 /-- The run `x` as observed. `f` is the map from a local state to a node's value `V`; the result has
-    the same actions, stamps, clocks, views, sent envelopes, corrupted and crashed sets, and each known local
-    state `l` replaced by `f l`. Not part of the bare framework.
+    the same actions, stamps, clocks, views, sent envelopes, corrupted and crashed sets, and each
+    known local state `l` replaced by `f l`. Not part of the bare framework.
 
     Read aloud: the run with each node's local state replaced by its image under `f`. -/
 def observe {Node Msg NodeState Ev V : Type} [DecidableEq Node] [DecidableEq Msg]

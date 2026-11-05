@@ -7,125 +7,77 @@ public import RealStsMulticastMultisetLog.Spec.Message
 /-!
 # Protocols and the system they induce — the specification
 
-Definitions only. The theorems about them — what each helper does to each field, the two
-eliminators, and what a `NodeStep` may and may not touch — belong to an analysis library
-beside this one (the framework's are in `deps/lean-sts/StsMultisetLog/Analysis/Lemmas.lean`),
-so that reading the model does not mean reading its proofs.
+Definitions only. The theorems about them are in `RealStsMulticastMultisetLog.Analysis`, so that
+reading the model does not mean reading its proofs. One proof stays here because a definition
+needs it: `nodeStep_total`, which discharges `ActionSpec.feasible` inside `nodeSpec`; the
+`feasible` of `crashDuring` and of `deliverSpec` are proved in place.
 
-One proof stays here, because a *definition* needs it: `nodeStep_total`, which discharges
-`ActionSpec.feasible` inside `nodeSpec` (after a short proof, in place, that the configuration a
-node action starts its reaction from still has the node's local state known); the `feasible` of
-`crashDuring` is proved in place, the same way, and the `feasible` of `deliverSpec` by cases on
-whether the validator is corrupted, from `nodeSpec`'s. That obligation is why the split cannot be
-perfectly clean. No other theorem is on this page.
+No `variable` command is used: each declaration writes every parameter it depends on in its own
+signature.
 
-The framework this is copied from had a function `extract`, reading a reaction back out of
-the configurations before and after it, and two more proofs: `extract`'s round trip with
-`applyNodeStepResult`, and `nodeStep_iff_exists`, the equivalence of its quantifier-free
-`NodeStep` with the existential one. All three are gone: a reaction's effects now include disk writes, which the framework's own
-write at the end of the step overwrites, and their order relative to the sends, which the
-configurations do not record; so a reaction is no longer a function of the two
-configurations, and `NodeStep` is the existential.
+## Events
 
-## Every declaration states its own parameters
-
-No `variable` command is used: each declaration writes every parameter it depends on in its own signature, so that a
-reader sees all of a definition's parameters where it is written (Roberto, 2026-10-29: "remove implicit variables from the
-rstsvariatn2 spec. it is much harder to read for me"). The binders keep the kinds and the order the section variables of
-`RStsVariant` gave them, so that every use reads as before.
-
-A protocol reacts to **events**, and to nothing else. The framework generates
-exactly the events it knows about — `tick` (the timer interrupt, at the validator's current clock
-reading) and `recv m` (a message was delivered, and is already in the view) — while every other
-trigger goes through `custom`, whose type `Ev` is the protocol's own, conditioned on
-`Protocol.enabled`. A restart is no event: it is a pure change of the node's state, made by
-the protocol's routine `Protocol.restart`, and no reaction runs at it. A clock change is no event
-either: `setClock` changes the reading and runs no protocol code.
+A protocol reacts to **events**, and to nothing else: `tick` (the timer interrupt, at the
+validator's current clock reading), `recv m` (a message was delivered) and `custom ev`, whose type
+`Ev` is the protocol's own, conditioned on `Protocol.enabled`. A restart is no event: it is a pure
+change of the node's state, made by the protocol's routine `Protocol.restart`, and no reaction
+runs at it. A clock change is no event either: `setClock` changes the reading and runs no protocol
+code.
 
 ## Real time is the execution's; the clock advances by a step of its own
 
-This copy is the real-time form of the variant `StsVariant` (D-SVF7 (H)). A configuration carries
-no time and no step reads one: the real time at which each configuration of a run is entered is a
-field of the execution, `Execution.stamp` (D-DNS1 (a); `RealStsMulticastMultisetLog.Spec.Execution`). There is one
-step relation, `spec`, and no step moves a time.
+A configuration carries no time and no step reads one: the real time at which each configuration
+of a run is entered is a field of the execution, `Execution.stamp`
+(`RealStsMulticastMultisetLog.Spec.Execution`). There is one step relation, `spec`, and no step
+moves a time.
 
 * **`setClock p t` sets `p`'s clock to the reading `t` and runs no protocol code.** `p`'s clock is
   `c.clock p`, `some` reading while the clock exists and `none` otherwise. The step is enabled only
   at a validator that is not corrupted, `p ∉ c.adv`. Once the clock exists, the step is enabled
   when `t` is greater than the current reading, whether `p` is up or crashed. Before it exists, the
-  step starts it at any reading, before or after `p` has come online (see "Unknown local state").
-  The clock is the node's hardware: it advances while the node is crashed. `corrupt p` empties it,
-  and since `setClock` is not enabled at a corrupted validator, a corrupted validator has no clock
-  from then on. No other step changes it. So while a node is not corrupted its clock strictly
-  increases along a run, and is never set back. The step happens at a real time, the stamp the
-  execution gives it, of its own for each node: the clocks are digital, the steps that set them
-  are not.
+  step starts it at any reading, before or after `p` has come online. The clock is the node's
+  hardware: it advances while the node is crashed. `corrupt p` empties it, and no `setClock` is
+  enabled at a corrupted validator. No other step changes it. So while a node is not corrupted its
+  clock strictly increases along a run. Each `setClock` happens at the real time the execution's
+  stamp gives it: the clocks are digital, the steps that set them are not.
 * **`tick p` is the timer interrupt.** It runs `p`'s tick reaction at `p`'s clock reading, and
   changes no clock. It is enabled when `p` is up and honest, with its local state known and its
-  clock existing. The step relation does not limit the
-  number of ticks at one reading: a protocol whose tick reaction must run once per reading keeps in
-  its state the last reading it reacted to. Which ticks a run must contain, and by when, is a
-  fairness condition on executions (`TicksWithinR`, `RealStsMulticastMultisetLog.Spec.Conditions`).
+  clock existing. The step relation does not limit the number of ticks at one reading: a protocol
+  whose tick reaction must run once per reading keeps in its state the last reading it reacted
+  to. Which ticks a run must contain, and by when, is a condition on executions (`TicksWithinR`,
+  `RealStsMulticastMultisetLog.Spec.Conditions`).
 * **`deliver p e` and `custom p ev` run their reactions at `p`'s clock reading**, and change no
   clock. The framework does not order a delivery and a tick at one reading (`Action.deliver`). A
   `deliver p e` at a corrupted `p` runs no reaction and reads no clock (section "Views").
-* **`restart p keep` needs the clock and changes no clock.** It is enabled only when `p`'s clock
-  exists. The restarted node's state is rebuilt by `Protocol.restart`, which is handed the reading
-  its clock holds then. So a node restarted while its clock reads `t` may then tick at `t`.
-* **What relates a reading `t` to the real time is a separate condition on executions, not part
-  of the step.** `ClockWithinSkewR ΔClockAhead ΔClockBehind` (`RealStsMulticastMultisetLog.Spec.Conditions`)
-  says every `setClock p t` is taken at a real time in `[t − ΔClockAhead, t + ΔClockBehind]` (D-DNS2 (a)); one shared clock is
-  its instance `ΔClockAhead = ΔClockBehind = 0`. Nothing in `spec` chooses the bounds.
+* **`restart p keep` needs the clock and changes no clock.** The restarted node's state is rebuilt
+  by `Protocol.restart`, which is handed the reading its clock holds then. So a node restarted
+  while its clock reads `t` may then tick at `t`.
+* **What relates a reading `t` to the real time is a condition on executions, not part of the
+  step.** `ClockWithinSkewR ΔClockAhead ΔClockBehind`
+  (`RealStsMulticastMultisetLog.Spec.Conditions`) says every `setClock p t` is taken at a real time
+  in `[t − ΔClockAhead, t + ΔClockBehind]`; one shared clock is its instance
+  `ΔClockAhead = ΔClockBehind = 0`. Nothing in `spec` chooses the bounds.
 
-## What differs from `RStsVariant`, and why
-
-In `RStsVariant` (`experiments/r-sts-variant/RStsVariant/Spec/Protocol.lean`), `tick p t` both set
-`p`'s clock to `t` and ran the tick reaction, and was enabled only when `c[p].clock < t`; and
-`restart p t keep` set the clock to `t`. So a node restarted with the reading `t` could not tick
-at `t`. Here the clock advances by an environment step of its own, `setClock`, which runs no
-protocol code; `tick` and `restart` lose their reading argument and read the stored clock; and the
-clock runs while the node is crashed. This is the shape the literature uses for real time with
-clocks: time, or a clock, advances by steps that change nothing else, and the protocol's steps read
-it (Abadi and Lamport 1994, Lamport's real-time TLA+, timed I/O automata, the hardware clocks of
-Attiya and Welch), and the hardware clock of Cristian and Fetzer 1999 runs through a process crash.
-The survey is `experiments/sts-variant/step_model_literature.md`; every change is listed in
-`experiments/r-sts-variant-2/CHANGES.md`.
-
-A second change, of 29 Oct 2026: a validator's local state may be
-unknown, and its clock may not exist yet, as the section "Unknown local state" says. The clock
-left `Local` for a configuration field of its own, `Config.clock`, so that it can go on existing
-while the local state is unknown. `CHANGES.md`, section "Unknown `Local`, 29 Oct", lists the
-changes and the points left open.
-
-A third change, also of 29 Oct 2026: a restart needs the clock. `restart p keep` is enabled only
-when `p`'s clock exists, and `setClock` may start a clock before its validator comes online. So a
-validator is never online without a clock, and `Protocol.restart` is always handed a reading.
-`CHANGES.md`, section "A restart needs the clock, 29 Oct", lists the changes.
-
-A fourth change, also of 29 Oct 2026: nothing is kept for a corrupted validator. `corrupt p` empties
-`p`'s clock as well as its local state, and `setClock p t` is enabled only when `p` is not
-corrupted. `CHANGES.md`, section "D-RSV2-2 (b) and D-RSV2-12 (b), 29 Oct", lists the changes.
-
-A fifth change, also of 29 Oct 2026: the view left `Local` for a configuration field of its own,
-`Config.view`, so that every validator has a view in every configuration, and a delivery to a
-corrupted validator is a step, which files the message into its view, as the section "Views" says.
-`CHANGES.md`, section "The view leaves `Local`, 29 Oct", lists the changes and the points left open.
+This is the usual shape of real time with clocks: time, or a clock, advances by steps that change
+nothing else, and the protocol's steps read it (Abadi and Lamport's real-time specifications, timed
+I/O automata, the hardware clocks of Attiya and Welch); the hardware clock of Cristian and Fetzer's
+timed asynchronous model runs through a process crash.
 
 ## Unknown local state
 
-A validator's local state (`Local`: its memory and its disk) is **known** or
-**unknown**: `c[p]` is `some l` or `none`. It is unknown before the validator first comes
-online, and from the moment the validator is corrupted on. A crashed validator keeps its local
-state: its disk, and its memory when the restart keeps it, are what its restart reads.
+A validator's local state (`Local`: its memory and its disk) is **known** or **unknown**: `c[p]`
+is `some l` or `none`. It is unknown before the validator first comes online, and from the moment
+the validator is corrupted on. A crashed validator keeps its local state: its disk, and its memory
+when the restart keeps it, are what its restart reads.
 
 * Every validator starts with an unknown local state and no clock (`Init`).
 * The first `setClock p t` starts `p`'s clock at the reading `t`, before `p` has come online or
   after, provided `p` is not corrupted.
 * `restart p keep` needs `p`'s clock to exist. At a validator whose local state is unknown and
   that is not corrupted, it brings the validator online: its local state becomes
-  `Pr.initialLocal p t`, `t` its clock reading (its initial state at `t` in memory, its persistent
-  part on disk), whatever `keep`; its view is not touched. So a validator's clock has started before it first comes
-  online, and a validator whose local state is known always has a clock.
+  `Pr.initialLocal p t`, `t` its clock reading, whatever `keep`; its view is not touched. So a
+  validator's clock has started before it first comes online, and a validator whose local state
+  is known always has a clock.
 * `corrupt p` sets `p`'s local state to `none` and `p`'s clock to `none`. No step sets either
   again: `restart` and `setClock` are not enabled at a corrupted validator.
 * `tick`, `custom` and `crashDuring`, and a `deliver` to an honest validator, are enabled only at
@@ -158,30 +110,25 @@ neither does the adversary's step `adversarial`.
 
 ## The environment is state
 
-A node is **up** or **down**, as the section "Unknown local state" says: down when it is in
-`Config.crashed` or has never come online. Who
-is corrupted and who is crashed are fields of the configuration, `Config.adv` and
-`Config.crashed`, and the environment changes them by steps of the run: `corrupt p` puts
-`p` in `adv` for good, `crash p` puts it in `crashed`, `restart p keep` takes it out.
-Every enabling condition reads these two fields and the configuration's other fields, and
-nothing else: no time. The framework this is copied from has the environment as a `Schedule`,
-functions of the time fixed for the whole execution. Here the environment's steps are steps of the
-run, so each comes at whatever real time the execution's stamp gives it: a corruption, a crash or a
-restart at any real time.
+Who is corrupted and who is crashed are fields of the configuration, `Config.adv` and
+`Config.crashed`, and the environment changes them by steps of the run: `corrupt p` puts `p` in
+`adv` for good, `crash p` puts it in `crashed`, `restart p keep` takes it out. Every enabling
+condition reads the configuration and nothing else: no time. Nothing about the environment is
+fixed in advance: each of its steps comes at whatever real time the execution's stamp gives it, so
+a corruption, a crash or a restart may happen at any real time.
 
-Whether a node's network is cut is in neither the configuration nor the conditions on executions:
-the integer variant's schedule `Off` is not carried (D-SVF6 (c)). A model that needs a cut network
-states a condition of its own.
+Whether a node's network is cut is in neither the configuration nor the conditions on executions.
+A model that needs a cut network states a condition of its own.
 
 ## Multicast
 
-A send names its recipients: every validator (`Recipients.all`, a broadcast) or a chosen
-set (`Recipients.only`). A reaction's sends are `Addressed` messages; the log holds
-`Envelope`s, signed and addressed; a delivery `deliver p e` requires `p` among `e`'s
-recipients and hands `p` the signed message without the recipients. The adversary
-(`adversarial`) chooses its recipients in the label. A relay is no action of its own: a
-protocol that relays does so in its reactions, addressing the relayed message as it
-chooses. A protocol that only broadcasts addresses every send to `.all`.
+A send names its recipients: every validator (`Recipients.all`, a broadcast) or a chosen set
+(`Recipients.only`). A reaction's sends are `Addressed` messages; the log holds `Envelope`s,
+signed and addressed; a delivery `deliver p e` requires `p` among `e`'s recipients and hands `p`
+the signed message without the recipients. The adversary (`adversarial`) chooses its recipients in
+the label. A relay is no action of its own: a protocol that relays does so in its reactions,
+addressing the relayed message as it chooses. A protocol that only broadcasts addresses every send
+to `.all`.
 
 ## Memory, disk, and the effects of a reaction
 
@@ -192,63 +139,54 @@ its disk is `Pr.persist` of its initial state.
 
 A reaction returns the validator's new memory state and an ordered list of effects
 (`NodeEffect`), each a send (an addressed message put on the wire, signed by the reacting
-validator) or a write (the disk set to a given state), in the order the protocol performs
-them. A protocol writes explicitly where the order of writing and sending matters: a record
-that must be on disk before a send that depends on it is written by a `write` placed before
-that `send`.
+validator) or a write (the disk set to a given state), in the order the protocol performs them. A
+protocol writes explicitly where the order of writing and sending matters: a record that must be
+on disk before a send that depends on it is written by a `write` placed before that `send`.
 
-A **completed** reaction (a `tick`, `deliver` or `custom` step) applies the whole list in
-order, sets the memory to the new state, and then the framework writes `Pr.persist` of the
-new state to the disk. So after every completed step the disk holds the persistent part of
-the state that step left, whatever the protocol wrote during it.
+A **completed** reaction (a `tick`, `deliver` or `custom` step) applies the whole list in order,
+sets the memory to the new state, and then the framework writes `Pr.persist` of the new state to
+the disk. So after every completed step the disk holds the persistent part of the state that step
+left, whatever the protocol wrote during it.
 
 ## Crash and restart
 
-The environment crashes a validator in one of two ways, and either way it joins `crashed`,
-so from then on, while it is honest, it does nothing and receives nothing.
+The environment crashes a validator in one of two ways, and either way it joins `crashed`, so from
+then on, while it is honest, it does nothing and receives nothing.
 
 * `crash p`, **between steps**: the validator's local state is untouched, so its disk is
   `Pr.persist` of the state its last completed step left.
 * `crashDuring p a k`, **during a reaction**: `a` is the node action interrupted (a tick, a
-  delivery or a protocol event, a `NodeAction`), enabled when `a`'s own step is. The reaction
-  `a` would run runs; only its first `k` effects are applied (its sends go on the wire, its
-  writes set the disk); the framework's final write is skipped and the new memory state is
-  discarded. A `k` at or past the length of the list applies every effect, and still skips
-  the final write. So a crash between a send and a disk write is a step of a run, which is
-  the case a record written before a signed send exists to survive.
+  delivery or a protocol event, a `NodeAction`), enabled when `a`'s own step is. The reaction `a`
+  would run runs; only its first `k` effects are applied (its sends go on the wire, its writes set
+  the disk); the framework's final write is skipped and the new memory state is discarded. A `k`
+  at or past the length of the list applies every effect, and still skips the final write. So a
+  crash between a send and a disk write is a step of a run.
 
 The environment restarts a crashed honest validator whose local state is known by
-`restart p keep`, which needs its clock to exist (a validator whose local state is known always
-has one): it leaves `crashed`, its clock is unchanged, and its node state is rebuilt by the
-protocol's routine `Protocol.restart`, at the reading `t` its clock holds. (The same step at a
-validator whose local state is unknown brings it online: section "Unknown local state" and
-`spec`.) `keep` says whether the node's memory survived: with
-`keep = false`, a reboot, the new state is `Pr.restart t false` of the **disk**; with
-`keep = true`, a return with memory intact, as after a pause of the process, it is
-`Pr.restart t true` of the **memory**. After a `crashDuring`, the memory is the state held before the interrupted
-reaction, since its new state was discarded. The disk is kept in both cases, and the view,
-a configuration field of its own (`Config.view`), is not touched by a restart.
-The view is the record of every message delivered to the validator, which the environment
-reads to say what the network has done; what the validator itself kept of those messages is
-in its node state. No reaction runs at the restart: the node's first reaction afterwards is
-its next tick, delivery or `custom` event. Since the view is kept, a promise that a restarted
-validator receives a message again is stated over the delivery steps after its last restart
-with `keep = false`, not over its view (the conditions on executions `DeliveredBeforeActing` and
-`CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`).
+`restart p keep`: it leaves `crashed`, its clock is unchanged, and its node state is rebuilt by the
+protocol's routine `Protocol.restart`, at the reading `t` its clock holds. `keep` says whether the
+node's memory survived: with `keep = false`, a reboot, the new state is `Pr.restart t false` of
+the **disk**; with `keep = true`, a return with memory intact, as after a pause of the process, it
+is `Pr.restart t true` of the **memory**. After a `crashDuring`, the memory is the state held
+before the interrupted reaction, since its new state was discarded. The disk is kept in both
+cases, and the view is not touched. No reaction runs at the restart: the node's first reaction
+afterwards is its next tick, delivery or `custom` event. Since the view is kept, a promise that a
+restarted validator receives a message again is stated over the delivery steps after its last
+restart with `keep = false`, not over its view (the conditions on executions
+`DeliveredBeforeActing` and `CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`).
 
-A model whose reactions are atomic assumes `NoCrashDuring` (`RealStsMulticastMultisetLog.Spec.Conditions`): no
-step is a `crashDuring`, so every crash finds the disk holding `Pr.persist` of the state the last
-step left.
+A model whose reactions are atomic assumes `NoCrashDuring`
+(`RealStsMulticastMultisetLog.Spec.Conditions`): no step is a `crashDuring`, so every crash finds
+the disk holding `Pr.persist` of the state the last step left.
 
-Two facts the framework had to assume of a schedule hold here by construction: corruption
-is permanent (`corrupt` only inserts), and a crashed honest node acts and receives nothing
-(`tick`, `custom` and `crashDuring`, and `deliver` at an honest node, require their node outside
-`crashed`, with its local state known and its clock existing; its clock still advances by
-`setClock`), and a corrupted validator keeps nothing but its view (`corrupt` empties its local
-state and its clock, and neither `restart` nor `setClock` is enabled at it; deliveries go on
-filing messages into its view). Timing conditions are
-predicates on executions (`RealStsMulticastMultisetLog.Spec.Conditions`), so different models impose
-different ones over the same step relation.
+Three facts hold by construction: corruption is permanent (`corrupt` only inserts); a crashed
+honest node acts and receives nothing (`tick`, `custom` and `crashDuring`, and `deliver` at an
+honest node, require their node outside `crashed`, with its local state known and its clock
+existing; its clock still advances by `setClock`); and a corrupted validator keeps nothing but its
+view (`corrupt` empties its local state and its clock, and neither `restart` nor `setClock` is
+enabled at it). Timing conditions are predicates on executions
+(`RealStsMulticastMultisetLog.Spec.Conditions`), so different models impose different ones over the
+same step relation.
 -/
 
 set_option autoImplicit false
@@ -257,8 +195,7 @@ universe u v
 
 namespace Framework.RealStsMulticastMultisetLog
 
-/-- What a protocol reacts to. `Ev` is the protocol's own event type; use `Empty`
-    if it has none. -/
+/-- What a protocol reacts to. `Ev` is the protocol's own event type; use `Empty` if it has none. -/
 inductive Event (Node Msg Ev : Type) where
   /-- The timer interrupt, at this validator's current clock reading. -/
   | tick
@@ -271,7 +208,7 @@ inductive Event (Node Msg Ev : Type) where
     disk.
 
     Named `NodeEffect` rather than `Effect`, which in this file means an *action's* effect on
-    the whole configuration (`ActionSpec.Effect`); the two live at different levels. -/
+    the whole configuration (`ActionSpec.Effect`). -/
 inductive NodeEffect (Node Msg NodeState : Type) where
   /-- Put the addressed message `a` on the wire, signed by the reacting validator when
       applied; the network decides when each recipient receives it. -/
@@ -289,10 +226,7 @@ inductive NodeEffect (Node Msg NodeState : Type) where
     protocol uses where writing before sending matters: a record written to disk before a
     send that depends on it survives any crash that the send survives. A protocol with
     nothing to write in the middle of a reaction lists its sends only, and the final write
-    keeps the disk up to date.
-
-    Named for what it is rather than `Effect`, which in this file means an *action's*
-    effect on the whole configuration (`ActionSpec.Effect`). -/
+    keeps the disk up to date. -/
 structure NodeStepResult (Node NodeState Msg : Type) where
   /-- The node's memory state afterwards. -/
   state : NodeState
@@ -308,12 +242,12 @@ structure Protocol (Node Msg NodeState Ev : Type) where
       reading `r` at that moment. Read once per validator, by the `restart` that brings it online
       (`Protocol.initialLocal`); `Init` sets no state. A protocol whose start does not depend on
       the time ignores `r`; one that tells a validator online from the start from one that joins
-      later reads it (D-PHC8 (d), 29 Oct 2026).
+      later reads it.
 
       Read aloud: the state `p` starts with when it comes online at the reading `r`. -/
   init : Time → Node → NodeState
-  /-- `step p r s e res` — `res` is *a* reaction `p` may have to `e`, where `r`
-      is **`p`'s own clock reading**, not the real time.
+  /-- `step p r s e res` — `res` is *a* reaction `p` may have to `e`, where `r` is **`p`'s own clock
+      reading**, not the real time.
 
       The reaction sees `p`'s clock reading, its memory state `s` and the event `e`, and
       never the view. A protocol must not read what a restart without memory would take
@@ -322,11 +256,10 @@ structure Protocol (Node Msg NodeState Ev : Type) where
       it is in its memory state. The view is the environment's account of what the network
       has delivered, read by the execution's conditions, not by the protocol.
 
-      A relation, not a function, so honest behaviour may be underspecified: which
-      payload a leader proposes, which of several equally valid chains it follows,
-      anything a specification leaves open. A protocol that is in fact deterministic
-      lifts its function with `step p r s e res := res = f p r s e`, which keeps
-      it computable — see the examples. -/
+      A relation, not a function, so honest behaviour may be underspecified: which payload a leader
+      proposes, which of several equally valid chains it follows, anything a specification leaves
+      open. A protocol that is in fact deterministic lifts its function with
+      `step p r s e res := res = f p r s e`, which keeps it computable. -/
   step : Node → Time → NodeState → Event Node Msg Ev →
     NodeStepResult Node NodeState Msg → Prop
   /-- Some reaction is always available: a protocol may not get stuck. This is what
@@ -362,9 +295,8 @@ structure Protocol (Node Msg NodeState Ev : Type) where
       (`Protocol.initialLocal`). -/
   restart : Time → Bool → NodeState → NodeState
 
-/-- What a validator holds locally: one structure rather than several parallel
-    maps, so an action names the one field it changes and adding per-validator
-    state touches one place.
+/-- What a validator holds locally: one structure rather than several parallel maps, so an action
+    names the one field it changes and adding per-validator state touches one place.
 
     The validator's clock is not in it: the clock is the validator's hardware, and it goes on
     existing when the local state is unknown (`Config.clock`). Its view is not in it either: every
@@ -396,13 +328,12 @@ def Protocol.initialLocal {Node Msg NodeState Ev : Type} (Pr : Protocol Node Msg
 structure Config (Node Msg NodeState : Type) where
   /-- Each validator's local state: `some l` when it is known, `none` when it is unknown.
 
-      It is unknown before the validator first comes online and from the moment it is corrupted
-      on: every validator starts with `none` (`Init`), `corrupt p` sets `p`'s to `none`, and a
-      `restart` of a validator whose local state is `none` gives it `Pr.initialLocal p t`, `t` its
-      clock reading. A crash
-      leaves it as it is: a crashed validator keeps its memory and its disk, which its restart
-      reads. The view is not part of it (`view`). A validator whose local state is unknown takes
-      no step that runs its reaction (`nodeSpec`). -/
+      It is unknown before the validator first comes online and from the moment it is corrupted on:
+      every validator starts with `none` (`Init`), `corrupt p` sets `p`'s to `none`, and a `restart`
+      of a validator whose local state is `none` gives it `Pr.initialLocal p t`, `t` its clock
+      reading. A crash leaves it as it is: a crashed validator keeps its memory and its disk, which
+      its restart reads. The view is not part of it (`view`). A validator whose local state is
+      unknown takes no step that runs its reaction (`nodeSpec`). -/
   nodes : Node → Option (Local Node Msg NodeState)
   /-- Each validator's clock reading: `some t` while its clock exists, `none` otherwise: before it
       starts, and from the moment the validator is corrupted on.
@@ -428,14 +359,11 @@ structure Config (Node Msg NodeState : Type) where
   /-- Every message ever put on the wire, each with its recipients, **with multiplicity**.
       Monotone.
 
-      A multiset rather than a set: `∪` is lossy, so a reaction that re-sends a message
-      already in the log would leave no trace, and the envelopes a step put on the wire are
+      A multiset rather than a set: `∪` is lossy, so a reaction that re-sends a message already in
+      the log would leave no trace, and the envelopes a step put on the wire are
       `post.sent - pre.sent` (what `DueBy` reads, part of the conditions on executions
-      `DeliveredBeforeActing` and `CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`). In the
-      framework this is copied
-      from, that also made a reaction a function of the configurations before and after it;
-      with disk writes among a reaction's effects it no longer is, and `NodeStep` is an
-      existential.
+      `DeliveredBeforeActing` and `CatchUpAfterRestart`,
+      `RealStsMulticastMultisetLog.Spec.Conditions`).
 
       The price is that multiplicity is observable state: two executions differing only in
       how many times a message was sent are different configurations. Nothing stated in
@@ -451,12 +379,11 @@ structure Config (Node Msg NodeState : Type) where
       has no clock (`clock`), and no `setClock` gives it one; its view (`view`) is kept, and
       deliveries go on growing it. -/
   adv : Finset Node
-  /-- The validators crashed and not yet restarted. A validator is **down** when it is in this
-      set, or when its local state is unknown and it is not corrupted (it has never come online);
-      it is **up** otherwise. A validator that has never come online is not in this set unless
-      a `crash` step put it there. A
-      validator joins it by `crash`, or by `crashDuring` (a crash during one of its
-      reactions), and leaves it by `restart` alone; while in it, an honest validator does
+  /-- The validators crashed and not yet restarted. A validator is **down** when it is in this set,
+      or when its local state is unknown and it is not corrupted (it has never come online); it is
+      **up** otherwise. A validator that has never come online is not in this set unless a `crash`
+      step put it there. A validator joins it by `crash`, or by `crashDuring` (a crash during one of
+      its reactions), and leaves it by `restart` alone; while in it, an honest validator does
       nothing and receives nothing: `tick`, `custom` and `crashDuring`, and `deliver` at an honest
       validator, require their validator outside this set. A corrupted validator in it is still
       delivered messages into its view. Its clock, once it exists, still advances (`setClock`),
@@ -522,15 +449,15 @@ inductive Action (Node Msg Ev : Type) where
   | crashDuring (p : Node) (a : NodeAction Node Msg Ev) (k : Nat)
   /-- The environment restarts the honest validator `p`, crashed or with an unknown local state,
       whose clock exists, its memory surviving when `keep` is `true`: `p` leaves `crashed`. When
-      `p`'s local state is unknown and its clock reads `t`, `p` comes online: its local state becomes
-      `Pr.initialLocal p t`, whatever `keep`. When it is known and `p`'s clock reads `t`, its node state becomes its protocol's
-      `restart t false` of its disk when `keep` is `false`, and `restart t true` of its memory when
-      `keep` is `true`; its disk is kept. Its clock and its view are unchanged. No reaction
-      runs. -/
+      `p`'s local state is unknown and its clock reads `t`, `p` comes online: its local state
+      becomes `Pr.initialLocal p t`, whatever `keep`. When it is known and `p`'s clock reads `t`,
+      its node state becomes its protocol's `restart t false` of its disk when `keep` is `false`,
+      and `restart t true` of its memory when `keep` is `true`; its disk is kept. Its clock and its
+      view are unchanged. No reaction runs. -/
   | restart (p : Node) (keep : Bool)
   /-- A protocol-specific event fires at `p`. -/
   | custom (p : Node) (ev : Ev)
-  /-- An adversarial validator signs an arbitrary message and addresses it to `to`. -/
+  /-- An adversarial validator signs an arbitrary message and addresses it to `recipients`. -/
   | adversarial (p : Node) (m : Msg) (recipients : Recipients Node)
 
 /-- Give `p` the local state `r` (`some l` for a known one, `none` for an unknown one), leaving
@@ -548,9 +475,7 @@ def Config.setNode {Node Msg NodeState : Type} [DecidableEq Node] (p : Node)
   { c with nodes := fun q => if p = q then r else c[q] }
 
 /-! The writes that follow each name what they change, and each is a single `setNode`, a single
-update of `sent`, a single update of `clock`, or a sequence of them. An earlier version had
-`applyNodeStepResult` go through a `Config.setNodeState`, which cost an extra hop in every proof
-about it and made it the odd one out.
+update of `sent`, a single update of `clock`, or a sequence of them.
 
 Each write to a part of `p`'s local state (a disk write, the memory and the final write of a
 completed reaction) changes that part when the local state is known, and changes nothing when it
@@ -648,8 +573,7 @@ theorem nodeStep_total {Node Msg NodeState Ev : Type} [DecidableEq Node]
   obtain ⟨res, he⟩ := Pr.total p t l.st e
   exact ⟨_, l, t, res, hl, ht, he, rfl⟩
 
-/-- What one action does: when it may occur, and how it may change the
-    configuration.
+/-- What one action does: when it may occur, and how it may change the configuration.
 
     The two halves sit **together, per action**, so they cannot be mismatched: there
     is no way to write an enabling condition belonging to one action beside the
@@ -708,16 +632,16 @@ def NodeAction.prepare {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decida
     validator whose local state is known always has a clock, since a restart needs one; the
     condition on the clock names the reading `t` the reaction runs at.
 
-    * A tick: no further condition. The tick reaction runs at `p`'s current clock reading. The
-      step relation allows any number of ticks at one reading; which ticks a run must contain,
-      and by when, is a condition on executions (`TicksWithinR`, `RealStsMulticastMultisetLog.Spec.Conditions`).
-    * A delivery of `e`: `e` is on the wire and names `p` among its recipients. Any sent
-      envelope may be delivered to any of its recipients that is up and honest, at any real
-      time; here, delivery to a crashed honest validator, or to one whose local state is
-      unknown, is not enabled, and the envelope stays in `sent`. A delivery to a corrupted
-      validator is not a node action: `deliverSpec` adds it, with no reaction.
-      When the network must deliver, and to whom it must not, are conditions on executions. The
-      reaction runs at `p`'s current clock reading.
+    * A tick: no further condition. The tick reaction runs at `p`'s current clock reading. The step
+      relation allows any number of ticks at one reading; which ticks a run must contain, and by
+      when, is a condition on executions (`TicksWithinR`,
+      `RealStsMulticastMultisetLog.Spec.Conditions`).
+    * A delivery of `e`: `e` is on the wire and names `p` among its recipients. Any sent envelope
+      may be delivered to any of its recipients that is up and honest, at any real time; here,
+      delivery to a crashed honest validator, or to one whose local state is unknown, is not
+      enabled, and the envelope stays in `sent`. A delivery to a corrupted validator is not a node
+      action: `deliverSpec` adds it, with no reaction. When the network must deliver, and to whom it
+      must not, are conditions on executions. The reaction runs at `p`'s current clock reading.
     * A protocol-specific event `ev`: the protocol allows it at `p`'s own clock reading `t` and
       memory state `l.st`.
 
@@ -795,7 +719,7 @@ def deliverSpec {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq M
     (`Execution.stamp`).
 
     A delivery reads the recipients: `deliver p e` is enabled only when `e.recipients.Has p`.
-    The recipients reach no view: `p` is delivered `e.toSignedMsg`, as before.
+    The recipients reach no view: `p` is delivered `e.toSignedMsg`.
 
     Read aloud: for each action, when it may be taken and what configuration it may lead to,
     both read off the configuration alone. -/
@@ -906,16 +830,15 @@ def Step {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     (c c' : Config Node Msg NodeState) : Prop :=
   (spec Pr a).Enabled c ∧ (spec Pr a).Effect c c'
 
-/-- Initial configurations: every validator's local state unknown and its clock absent, since
-    no validator has come online yet, every validator's view empty, and nothing sent. Each
-    validator's clock is started by a `setClock`, and the validator comes online by a later `restart`, which gives it
-    `Pr.initialLocal p t` at its clock reading `t` and is enabled only once the clock exists.
-    `adv` and `crashed` are not constrained: the environment starts from any corrupted set and
-    any crashed set, as the framework's schedule could say anything at time `0`. A validator
-    corrupted from the start never has a clock, since `setClock` is not enabled at it. A model that
-    wants every corruption recorded as a `corrupt` step assumes `(x[0]).adv = ∅` of its
-    executions; likewise `(x[0]).crashed = ∅`. The run's start at the real time `0` is the
-    execution's (`Execution.init_stamp`).
+/-- Initial configurations: every validator's local state unknown and its clock absent, since no
+    validator has come online yet, every validator's view empty, and nothing sent. Each validator's
+    clock is started by a `setClock`, and the validator comes online by a later `restart`, which
+    gives it `Pr.initialLocal p t` at its clock reading `t` and is enabled only once the clock
+    exists. `adv` and `crashed` are not constrained: the environment starts from any corrupted set
+    and any crashed set. A validator corrupted from the start never has a clock, since `setClock` is
+    not enabled at it. A model that wants every corruption recorded as a `corrupt` step assumes
+    `(x[0]).adv = ∅` of its executions; likewise `(x[0]).crashed = ∅`. The run's start at the real
+    time `0` is the execution's (`Execution.init_stamp`).
 
     No protocol is a parameter: the protocol enters at the first `restart` of each validator.
 
@@ -925,15 +848,9 @@ def Init {Node Msg NodeState : Type} (c : Config Node Msg NodeState) : Prop :=
   (∀ p : Node, c[p] = none) ∧ (∀ p : Node, c.clock p = none) ∧ (∀ p : Node, c.view p = ∅) ∧
     c.sent = 0
 
-/-- A labelled transition system: initial states, and a labelled step relation
-    that may be nondeterministic and partial.
-
-    The framework's own, so that `Framework/` depends on nothing outside itself.
-    Only the structure is here — no reachability or inductive-invariant machinery,
-    since the framework carries no proofs while its shape is being iterated on.
-    `Common/System.lean` has that machinery for the `Sts` attempt; when proofs
-    return, **build it here rather than importing `Common`**, because liveness needs
-    statements over `Execution` that a state-based invariant cannot express. -/
+/-- A labelled transition system: initial states, and a labelled step relation that may be
+    nondeterministic and partial. Only the structure is here: no reachability or inductive-invariant
+    machinery. -/
 structure System (SystemState : Type u) (Label : Type v) where
   /-- The states the system may start in. -/
   Init : SystemState → Prop

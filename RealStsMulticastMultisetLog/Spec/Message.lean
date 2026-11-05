@@ -15,24 +15,17 @@ set_option autoImplicit false
 
 namespace Framework.RealStsMulticastMultisetLog
 
-/-- A node's clock reading, an integer — Majorum §Model has "time is divided into
-    discrete rounds", TOB-SVD counts time steps.
+/-- A node's clock reading, a natural number.
 
     `Config.clock p` is the node `p`'s reading (`none` before its clock exists, and from `p`'s
-    corruption on), and it is what
-    a protocol is handed. The real time is
-    not measured in this: it is a real number, the execution's `Execution.stamp`, read only by the
-    conditions on executions. The clocks are digital; the steps that set them happen at real
-    times.
+    corruption on), and it is what a protocol is handed. The real time is not measured in this:
+    it is a real number, the execution's `Execution.stamp`, read only by the conditions on
+    executions. The clocks are digital; the steps that set them happen at real times.
 
-    Slots are deliberately absent: Majorum's `4Δ`-round slot is a property of
-    that model, and it defines its own `proposing`/`voting` rounds over `Time`
-    (see `Models.Majorum`). TOB-SVD has no round-aligned slots at all.
+    Slots are absent: a protocol that has them defines them over `Time`.
 
-    **Notation, not an `abbrev`.** Measured twice in this repository now: `omega` does
-    not see through a reducible alias, so `abbrev Time := Nat` makes arithmetic on
-    rounds unprovable by it. Notation expands at parse time, leaving nothing to hide
-    the `Nat`.
+    Notation, not an `abbrev`: `omega` does not see through a reducible alias, so
+    `abbrev Time := Nat` would hide the arithmetic from it. Notation expands at parse time.
 
     Read aloud: a clock reading is a natural number. -/
 scoped notation "Time" => Nat
@@ -46,9 +39,8 @@ structure SignedMsg (Node Msg : Type) where
   msg : Msg
   deriving DecidableEq
 
-/-- A validator's view: every message it has received so far (Majorum's `V^r_i`,
-    TOB-SVD's received-message state). Maintained by the framework, so a
-    protocol can neither forget nor fabricate a delivery. -/
+/-- A validator's view: every message delivered to it so far. Maintained by the framework,
+    so a protocol can neither forget nor fabricate a delivery. -/
 abbrev View (Node Msg : Type) := Finset (SignedMsg Node Msg)
 
 /-- Whom a send is addressed to: every validator (a broadcast), or the validators of a

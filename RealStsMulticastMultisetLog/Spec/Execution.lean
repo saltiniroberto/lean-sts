@@ -7,49 +7,35 @@ public import RealStsMulticastMultisetLog.Spec.Protocol
 /-!
 # Executions in real time
 
-Liveness is a property of executions, not of reachable states, so a state-based
-`Invariant` over a `System` cannot express it. Hence `Execution`, and hence why
-every network and participation assumption in this framework is a **predicate on
-executions** rather than a condition on `Step`: the two models we care about impose
-different ones over the same step relation.
+Liveness is a property of executions, not of reachable states, so a state-based invariant over a
+`System` cannot express it. Hence `Execution`, and hence every network and participation
+assumption here is a **predicate on executions** rather than a condition on `Step`: different
+models impose different ones over the same step relation.
 
 This page holds the framework's executions and the readings of an execution: `Execution`, its
-indexing, `Execution.InForce`, `Exec`, `Execution.Honest` and `Execution.Enabled`. The conditions on
-executions, which statements take as hypotheses, are on the page `RealStsMulticastMultisetLog.Spec.Conditions`; the
-framework assumes none of them.
+indexing, `Execution.InForce`, `Exec`, `Execution.Honest` and `Execution.Enabled`. The conditions
+on executions, which statements take as hypotheses, are on the page
+`RealStsMulticastMultisetLog.Spec.Conditions`; the framework assumes none of them.
 
 **Real time is the execution's.** An execution is a sequence of configurations and steps, each
-configuration entered at a real time, `Execution.stamp` (D-DNS1 (a)). The configurations carry no
-time and the step relation reads none (`RealStsMulticastMultisetLog.Spec.Protocol`): the real time enters only
-through the stamps, which the conditions on executions (`RealStsMulticastMultisetLog.Spec.Conditions`) read.
-Several steps may share one stamp; their order
-in the sequence is then any order, so a delivery and a tick taken at one real time come in either
-order (D-ORD1 (b)). Two steps of one node may also share one real time. The environment's steps (a
-clock change, a corruption, a crash, a restart) are steps like the others, so each happens at
+configuration entered at a real time, `Execution.stamp`. The configurations carry no time and the
+step relation reads none (`RealStsMulticastMultisetLog.Spec.Protocol`): the real time enters only
+through the stamps, which the conditions on executions read. Several steps may share one stamp;
+their order in the sequence is then any order, so a delivery and a tick taken at one real time
+come in either order. Two steps of one node may also share one real time. The environment's steps
+(a clock change, a corruption, a crash, a restart) are steps like the others, so each happens at
 whatever real time its stamp says.
 
-The nodes' clocks are digital: `c.clock p` is an integer reading, `some t`, once `p`'s clock
+The nodes' clocks are digital: `c.clock p` is a natural-number reading, `some t`, once `p`'s clock
 exists, and `none` otherwise (no clock exists at the start, and a corruption empties it; a
-validator's clock starts before it first comes online, since a restart needs it). The step that sets a reading,
-`setClock p t`, happens at a real time of its own, its stamp, and runs no protocol code; every other
-step of `p` reads the clock. How a reading relates to the real time at which it is set is a
-condition on executions (`ClockWithinSkewR`), so that a property carries only the clock discipline
-it needs.
-
-Since 29 Oct 2026 a validator's local state may be unknown (before it first comes online, and
-from its corruption on), no clock exists at the start, and a restart needs the clock
-(`RealStsMulticastMultisetLog.Spec.Protocol`, section "Unknown local state"). So `ClockAdvancesWithinR`, a
-condition on executions, asks every node's clock, once started at any reading, to come to every
-greater reading while the node is up (not crashed, with its local state known) and not
-corrupted, and asks nothing of the clock of a node crashed or not yet online; it does not ask a
-clock to start. A corruption empties the validator's clock as well
-as its local state, and no `setClock` is taken at a corrupted validator (D-RSV2-2 (b) and
-D-RSV2-12 (b)).
-
-Since the same day every validator has a view in every configuration, `x[i].view p`, a field of the
-configuration rather than of the local state, and a delivery to a corrupted validator is a step of
-the run, which files the message into its view and runs no protocol code
-(`RealStsMulticastMultisetLog.Spec.Protocol`, section "Views").
+validator's clock starts before it first comes online, since a restart needs it). The step that
+sets a reading, `setClock p t`, happens at a real time of its own, its stamp, and runs no protocol
+code; every other step of `p` reads the clock. How a reading relates to the real time at which it
+is set is a condition on executions (`ClockWithinSkewR`), so that a property carries only the
+clock discipline it needs. `ClockAdvancesWithinR`, another condition on executions, asks every
+node's clock, once started at any reading, to come to every greater reading while the node is up
+and not corrupted; it asks nothing of the clock of a node crashed or not yet online, and does not
+ask a clock to start.
 -/
 
 set_option autoImplicit false
@@ -62,8 +48,8 @@ namespace Framework.RealStsMulticastMultisetLog
     `stamp i` is the real time at which configuration `i` is entered. So `stamp 0` is the start of
     the run, and `stamp (i + 1)` is the real time of step `i`, the step from configuration `i` to
     configuration `i + 1`. The real time never goes back (`mono`), never stops (`progress`), and
-    starts at `0` (`init_stamp`). Several steps may share a stamp (`mono` is not strict): steps taken
-    at one real time, in the order of the sequence.
+    starts at `0` (`init_stamp`). Several steps may share a stamp (`mono` is not strict): steps
+    taken at one real time, in the order of the sequence.
 
     Read aloud: a sequence of configurations, each entered at a real time, each transition one of
     the system's steps; the real time of a step is the stamp of the configuration it enters.
@@ -71,13 +57,10 @@ namespace Framework.RealStsMulticastMultisetLog
     The labels are needed because fairness is a statement about which transitions occur (a tick is
     a transition of its own, and nothing in the step relation forces it to happen), and because
     the network's conditions on executions (`DeliveredBeforeActing`, `CatchUpAfterRestart`,
-    `SyncedWithinBy`) speak of delivery steps: a restart keeps the view, and the view no longer
-    tells a delivery after the restart from one before it.
-
-    An alternative was to define occurrence from the relation itself
-    (`Sys.Step a (cfg i) (cfg (i+1))`), which needs no field, but it only says an
-    `a`-step *explains* the transition, not that it is the one taken — two actions
-    with the same effect are then indistinguishable, and nothing can be counted. -/
+    `SyncedWithinBy`) speak of delivery steps: a restart keeps the view, and the view does not
+    tell a delivery after the restart from one before it. Occurrence read off the relation
+    (`Sys.Step a (cfg i) (cfg (i+1))`) would only say that an `a`-step explains the transition,
+    not that it is the one taken: two actions with the same effect would be indistinguishable. -/
 structure Execution {St Lbl : Type} (Sys : System St Lbl) where
   /-- The configuration after `i` steps. -/
   cfg : Nat → St
@@ -97,8 +80,8 @@ structure Execution {St Lbl : Type} (Sys : System St Lbl) where
   /-- The run starts at real time `0`. -/
   init_stamp : stamp 0 = 0
 
-/-- `x[i]` is the configuration after `i` steps. Indexing is total, so the
-    validity side-condition is trivial. -/
+/-- `x[i]` is the configuration after `i` steps. Indexing is total, so the validity side-condition
+    is trivial. -/
 instance {St Lbl : Type} {Sys : System St Lbl} :
     GetElem (Execution Sys) Nat St (fun _ _ => True) where
   getElem x i _ := x.cfg i
@@ -126,18 +109,17 @@ abbrev Exec {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 /-! ### Reading an execution
 
 `x[i]` is the configuration after `i` steps, so `x[i].clock p` is what `p`'s clock reads there
-(`some` integer, or `none` before the clock exists and from `p`'s corruption on), `x[i][p]` is `p`'s local state there (`some`
-when known, `none` when unknown: before `p` first comes online, and from its corruption on),
-`x[i].view p` is `p`'s view there (the signed messages delivered to `p` so far, whatever its local
-state, a corrupted `p` included), and `x[i].crashed`, `x[i].adv` are the crashed set and the
-corrupted set there.
-`x.stamp i` is the real time configuration `i` is entered, and `x.stamp (i + 1)` the real time of
-step `i`. `x.Honest i p` says `p` is outside the corrupted set there, and `x.Enabled i a` that the
-action `a` may be taken at step `i`.
+(`some` reading, or `none` before the clock exists and from `p`'s corruption on), `x[i][p]` is `p`'s
+local state there (`some` when known, `none` when unknown: before `p` first comes online, and from
+its corruption on), `x[i].view p` is `p`'s view there (the signed messages delivered to `p` so far,
+whatever its local state, a corrupted `p` included), and `x[i].crashed`, `x[i].adv` are the crashed
+set and the corrupted set there. `x.stamp i` is the real time configuration `i` is entered, and
+`x.stamp (i + 1)` the real time of step `i`. `x.Honest i p` says `p` is outside the corrupted set
+there, and `x.Enabled i a` that the action `a` may be taken at step `i`.
 
-There is deliberately no `Active`: whether a validator is *participating* — as
-opposed to merely up — is decided by its own program, so no framework-level
-predicate can express it. Statements that need it take it as a parameter. -/
+There is deliberately no `Active`: whether a validator is *participating* — as opposed to merely up
+— is decided by its own program, so no framework-level predicate can express it. Statements that
+need it take it as a parameter. -/
 
 /-- Is `p` still honest after `i` steps? Corruption is a step of the run, so this is
     relative to the step.
@@ -152,10 +134,7 @@ def Execution.Honest {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decidabl
 
     Read off the action's own `ActionSpec`, so it cannot disagree with the step
     relation, and `ActionSpec.feasible` guarantees it does not promise more than the
-    effect delivers. An earlier version passed the enabling condition to `WeakFair`
-    as a separate argument, with nothing tying the two together: a wrong one made the
-    assumption either vacuous or unsatisfiable, and an unsatisfiable assumption makes
-    every theorem under it vacuously true.
+    effect delivers.
 
     Read aloud: `a`'s enabling condition holds of configuration `i`. -/
 def Execution.Enabled {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]

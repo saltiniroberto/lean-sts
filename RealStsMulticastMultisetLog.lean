@@ -8,16 +8,20 @@ public import RealStsMulticastMultisetLog.Spec.Conditions
 @[expose] public section
 
 /-!
-# The sts variant in real time, its clock advanced by a step of its own — the root module
+# A framework for message-passing distributed protocols — real time, multicast multiset log
 
-A copy of `RStsVariant`'s specification pages (`experiments/r-sts-variant/RStsVariant/Spec/`, taken
-2026-10-28 at `dev` `650afe543`) into the namespace `RealStsMulticastMultisetLog`, changed so that a node's clock
-advances by an environment step of its own, `setClock`, which runs no protocol code and is taken
-whether the node is up or crashed. Every other node event runs the protocol at the stored reading, and a
-restart leaves the clock as it is. Since 29 Oct 2026 a validator's local state may be unknown
-(before it first comes online, and from its corruption on), and its clock, a configuration field of
-its own, does not exist at the start; a restart needs the clock, so a validator's clock starts
-before it first comes online; and a corruption empties the validator's clock as well as its local
-state, and no `setClock` is taken at a corrupted validator. `experiments/r-sts-variant-2/CHANGES.md`
-lists every change and why. `RStsVariant` is not edited.
+**The suggested flavour.** A configuration carries no time: each configuration of an execution is
+entered at a real time, the execution's `Execution.stamp`. Each node's clock is a natural-number
+reading moved only by an environment step of its own, `setClock`, which runs no protocol code and is
+taken at a node that is not corrupted, whether it is up or crashed; every other node event (a tick,
+a delivery, a protocol event, a restart) runs at the reading the clock holds. A validator's local
+state is unknown before it first comes online and from its corruption on, and its clock exists from
+its first `setClock` until its corruption; a restart needs the clock. Sends are multicast: each
+names its recipients, and the log of sent envelopes is a `Multiset`. How readings relate to the real
+time, when ticks and deliveries must happen, and every other timing assumption are conditions on
+executions, which statements take as hypotheses.
+
+`Spec/` states the model (`Message`, `Protocol`, `Execution`, `Observable`, `ValidatorSets`,
+`Conditions`), and this module imports it; `Analysis/` proves things about it, and is imported
+page by page.
 -/

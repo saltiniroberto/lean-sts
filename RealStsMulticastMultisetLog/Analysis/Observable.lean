@@ -7,30 +7,32 @@ public import RealStsMulticastMultisetLog.Analysis.ObservableSimpAttr
 /-!
 # The conditions on executions, written over `Observable`: what they say on a run and on the run as observed
 
-Theorems about the definitions of `RealStsMulticastMultisetLog.Spec.Observable` and `RealStsMulticastMultisetLog.Spec.Conditions`,
-kept out of the specification so that it reads as definitions only. No condition on executions is
-assumed, and nothing here is part of the bare framework.
+Theorems about the definitions of `RealStsMulticastMultisetLog.Spec.Observable` and
+`RealStsMulticastMultisetLog.Spec.Conditions`, kept out of the specification so that it reads as
+definitions only. No condition on executions is assumed, and nothing here is part of the bare
+framework.
 
-* **The readings of a run.** For each field of `Observable`, a lemma that on a run `x : Exec Pr`
-  the reading is the run's own (`Observable.stamp x i = x.stamp i`, …), by `rfl`, in the simp set
-  `observable_exec` and in the default simp set. A proof that takes apart a hypothesis of a condition
-  over `Exec Pr` sees the class's readings; `dsimp only [observable_exec] at h` turns them back into
-  the run's own.
+* **The readings of a run.** For each field of `Observable`, a lemma that on a run `x : Exec Pr` the
+  reading is the run's own (`Observable.stamp x i = x.stamp i`, …), by `rfl`, in the simp set
+  `observable_exec` and in the default simp set. A proof that takes apart a hypothesis of a
+  condition over `Exec Pr` sees the class's readings; `dsimp only [observable_exec] at h` turns them
+  back into the run's own.
 * **On a run, each name over `Exec Pr` is the definition over the class.** For each definition of
-  `RealStsMulticastMultisetLog.Spec.Conditions` written once over `Observable`, the theorem `…_iff` states that on a
-  run `x : Exec Pr` the name over `Exec Pr` is that definition at `x`, a parameter that reads a node's
-  memory state `st` passed to it as `fun l => … l.st`, and the tree of a node read through the class
-  `BlockTree` (the run form passed `BlockTree.tree`) and the validator set at a block read through the
-  class `BlockRegistry` (the run form passed `BlockRegistry.registry`), and a message's author and
-  inclusions read through the class `MessageAuthorship` (the run form passed
-  `MessageAuthorship.author` and `MessageAuthorship.carries`). Each is `Iff.rfl`, from the name's definition,
-  except `weightBounds_iff`, which goes field by field: `WeightBounds` and `WeightBoundsG` are two
-  structures.
+  `RealStsMulticastMultisetLog.Spec.Conditions` written once over `Observable`, the theorem `…_iff`
+  states that on a run `x : Exec Pr` the name over `Exec Pr` is that definition at `x`, a parameter
+  that reads a node's memory state `st` passed to it as `fun l => … l.st`, and the tree of a node
+  read through the class `BlockTree` (the run form passed `BlockTree.tree`) and the validator set at
+  a block read through the class `BlockRegistry` (the run form passed `BlockRegistry.registry`), and
+  a message's author and inclusions read through the class `MessageAuthorship` (the run form passed
+  `MessageAuthorship.author` and `MessageAuthorship.carries`). Each is `Iff.rfl`, from the name's
+  definition, except `weightBounds_iff`, which goes field by field: `WeightBounds` and
+  `WeightBoundsG` are two structures.
 * **On a run as observed.** For each generic definition, what it says on `observe f x` is what it
-  says on `x` (`…_observe`); a parameter that reads a node's state is read through `f` on the run,
-  a node's tree is the same on the observed run and on the run when `f` keeps it, a parameter `acting`
-  is taken as two, one on observed runs and one on runs, that agree, and the committees, which neither an
-  observed run nor a run carries, are given to both through `ObservableWithCommittees.ofCommittees`.
+  says on `x` (`…_observe`); a parameter that reads a node's state is read through `f` on the run, a
+  node's tree is the same on the observed run and on the run when `f` keeps it, a parameter `acting`
+  is taken as two, one on observed runs and one on runs, that agree, and the committees, which
+  neither an observed run nor a run carries, are given to both through
+  `ObservableWithCommittees.ofCommittees`.
 -/
 
 set_option autoImplicit false
@@ -48,7 +50,8 @@ variable {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 /-- On a run, the action of step `j` the class reads is the run's own. -/
 @[simp, observable_exec] theorem observable_lbl_exec (j : Nat) : lbl x j = x.lbl j := rfl
 
-/-- On a run, the real time configuration `i` is entered, as the class reads it, is the run's own. -/
+/-- On a run, the real time configuration `i` is entered, as the class reads it, is the run's
+    own. -/
 @[simp, observable_exec] theorem observable_stamp_exec (i : Nat) : stamp x i = x.stamp i := rfl
 
 /-- On a run, node `p`'s clock in configuration `i`, as the class reads it, is the run's own. -/
@@ -334,10 +337,10 @@ theorem honestProposerThrough_iff {Node Msg NodeState Ev : Type} [DecidableEq No
 `observe f x` has the run's actions, stamps, clocks, views, sent envelopes, corrupted and crashed
 sets, and `f l` where the run has the local state `l`. So a condition that does not read a node's
 state says the same on a run as observed as on the run, by definition; one that reads only whether
-the state is known says the same too; and one with a parameter reading the state says on the observed run,
-with a parameter over `V`, what it says on the run with that parameter read through `f`. A condition
-with a parameter `acting` says on the observed run what it says on the run when the two `acting` agree on
-`x` as observed and on `x`. -/
+the state is known says the same too; and one with a parameter reading the state says on the
+observed run, with a parameter over `V`, what it says on the run with that parameter read through
+`f`. A condition with a parameter `acting` says on the observed run what it says on the run when the
+two `acting` agree on `x` as observed and on `x`. -/
 
 section Observe
 

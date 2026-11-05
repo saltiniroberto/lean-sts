@@ -9,10 +9,11 @@ public import Mathlib.Tactic.Linarith
 /-!
 # What the bare framework's steps and executions do
 
-Theorems about the step relation and the executions of the bare framework `RealStsMulticastMultisetLog`
-(`RealStsMulticastMultisetLog.Spec.Protocol`, `RealStsMulticastMultisetLog.Spec.Execution`), kept out of the specification so
-that it reads as definitions only. No condition on executions is assumed. The read-backs of the
-helpers are on `RealStsMulticastMultisetLog.Analysis.ReadBacks`, which this page imports. In dependency order:
+Theorems about the step relation and the executions of the bare framework
+`RealStsMulticastMultisetLog` (`RealStsMulticastMultisetLog.Spec.Protocol`,
+`RealStsMulticastMultisetLog.Spec.Execution`), kept out of the specification so that it reads as
+definitions only. No condition on executions is assumed. The read-backs of the helpers are on
+`RealStsMulticastMultisetLog.Analysis.ReadBacks`, which this page imports. In dependency order:
 
 * **The two eliminators.** `Step.elim`, one case per action with the delivery split by whether the
   recipient is corrupted, each case with the enabling condition and the next configuration written

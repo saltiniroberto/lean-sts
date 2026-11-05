@@ -6,9 +6,10 @@ public import RealStsMulticastMultisetLog.Spec.Protocol
 /-!
 # What the bare framework's helpers and reactions do
 
-Theorems about the helpers of the bare framework `RealStsMulticastMultisetLog` (`RealStsMulticastMultisetLog.Spec.Protocol`), kept
-out of the specification so that it reads as definitions only; `RealStsMulticastMultisetLog.Analysis.Lemmas`
-imports this page and goes on to the steps and the executions.
+Theorems about the helpers of the bare framework `RealStsMulticastMultisetLog`
+(`RealStsMulticastMultisetLog.Spec.Protocol`), kept out of the specification so that it reads as
+definitions only; `RealStsMulticastMultisetLog.Analysis.Lemmas` imports this page and goes on to the
+steps and the executions.
 
 * **Read-backs.** For each helper (`Config.setNode`, `receive`, `setClock`, `applyEffect`,
   `applyEffects`, `applyNodeStepResult`, `applyCrashDuring`, `NodeAction.prepare`): what each
