@@ -13,7 +13,7 @@ rev = "v4.32.2"
 # the flavour that is imported, and a flavour may diverge without touching the others. The
 # module root is the flavour name: `import StsMultisetLog.Spec.Protocol`.
 
-# suggested, most general: multiset message log; `Spec/` states, `Analysis/` proves, `Examples/` demonstrates; the long applied types drawn from section variables
+# the most developed of the global-time flavours: multiset message log; `Spec/` states, `Analysis/` proves, `Examples/` demonstrates; the long applied types drawn from section variables
 [[lean_lib]]
 name = "StsMultisetLog"
 globs = ["StsMultisetLog", "StsMultisetLog.+"]
@@ -38,9 +38,9 @@ globs = ["StsConditionSplit", "StsConditionSplit.+"]
 name = "StsRelationalSetLog"
 globs = ["StsRelationalSetLog", "StsRelationalSetLog.+"]
 
-# the variant with per-node clocks moved by their own environment step (`setClock`), copied from the
-# `decoupled-consensus-lean` repository's `experiments/r-sts-variant-2/`; what changed against its parent is in
-# `RStsVariant2/CHANGES.md`. Imports Mathlib only.
+# suggested: real time, each node's clock moved by an environment step of its own (`setClock`),
+# every other node event run at the stored reading, a real-time stamp per configuration of an
+# execution; a multiset log of multicast envelopes. Imports Mathlib only.
 [[lean_lib]]
 name = "RealStsMulticastMultisetLog"
 globs = ["RealStsMulticastMultisetLog", "RealStsMulticastMultisetLog.+"]
