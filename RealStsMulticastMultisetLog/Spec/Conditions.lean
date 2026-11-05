@@ -1,15 +1,15 @@
 module
-public import RStsVariant2.Spec.Execution
-public import RStsVariant2.Spec.Observable
-public import RStsVariant2.Spec.ValidatorSets
+public import RealStsMulticastMultisetLog.Spec.Execution
+public import RealStsMulticastMultisetLog.Spec.Observable
+public import RealStsMulticastMultisetLog.Spec.ValidatorSets
 
 @[expose] public section
 
 /-!
 # Conditions on executions
 
-`RStsVariant2` (its states, its steps and its executions: `RStsVariant2.Spec.Protocol` and
-`RStsVariant2.Spec.Execution`) assumes none of the definitions on this page. Each is a condition
+`RealStsMulticastMultisetLog` (its states, its steps and its executions: `RealStsMulticastMultisetLog.Spec.Protocol` and
+`RealStsMulticastMultisetLog.Spec.Execution`) assumes none of the definitions on this page. Each is a condition
 on executions, which no step of the framework reads and which a statement takes as a hypothesis:
 `NoCrashDuring`, `ClockWithinSkewR` with its instances `ClockNotAheadR` and `ClockAtTimeR`,
 `WeakFair`, `StrongFair`, `ClockAdvancesWithinR`, `TicksWithinR` (with
@@ -21,19 +21,19 @@ and `Execution.UpAndHonestUntilActing` they use).
 
 Since 3 Nov 2026 each definition on this page that reads an execution, except `WeakFair` and
 `StrongFair` (which read `Execution.Enabled`, the step relation's enabling condition), is written
-once, over any type of execution with an `Observable` (`RStsVariant2.Spec.Observable`: the actions,
+once, over any type of execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`: the actions,
 the stamps, and in each configuration the clocks, the nodes' states, the views, the sent envelopes,
 the corrupted set and the crashed set). That definition takes the name without the trailing `R`
 where the name has one (`ClockAdvancesWithin` for `ClockAdvancesWithinR`), and the suffix `G`
 otherwise (`DueByG` for `DueBy`, `ActingStepG` for `Execution.ActingStep`), and sits just before the
 name over `Exec Pr`, which keeps its signature and its docstring and is defined as it at the run. A
-theorem `…_iff` (`RStsVariant2.Analysis.Observable`) states each, by `Iff.rfl`. The one exception
+theorem `…_iff` (`RealStsMulticastMultisetLog.Analysis.Observable`) states each, by `Iff.rfl`. The one exception
 is the structure `WeightBounds`, which keeps its own fields beside the structure `WeightBoundsG` (a
 definition would have no fields and no constructor of its own), and whose theorem goes field by
 field. A parameter that reads a node's state (`serves`, the members of a committee) reads, in the
 definition over the class, the state of type `L` the execution records; at a run that is the local
 state `l`, and the name over `Exec Pr` passes the reading of its memory state `l.st` (for a committee,
-`CommitteeSpec.comap (fun l => l.st)`, `RStsVariant2.Spec.ValidatorSets`). The committees themselves are read
+`CommitteeSpec.comap (fun l => l.st)`, `RealStsMulticastMultisetLog.Spec.ValidatorSets`). The committees themselves are read
 through the class `ObservableWithCommittees`, which extends `Observable` with an execution's committees
 (`CommitteeSleepinessFromG`, `AsyncPeriodSleepinessG`); a run, which carries no committees, is read with
 given committees through `ObservableWithCommittees.ofCommittees`. The blocks of a node's tree are
@@ -57,7 +57,7 @@ takes: `WeightBounds` (with `AdversaryUnderIntersectionBy`, `AdversaryUnderQuoru
 (with `AffectedByAsync` and the reading `Execution.MostOfCommittee`) and `HonestProposerThrough`;
 the reading `Execution.HonestSentBy`; and a condition on a statement's parameters,
 `AsyncPeriodEndsInTime`. What they read of the protocol is passed as a parameter, of the types
-of `RStsVariant2.Spec.ValidatorSets`.
+of `RealStsMulticastMultisetLog.Spec.ValidatorSets`.
 
 Whether a crash may interrupt a reaction is one of these assumptions too. The step relation
 has both kinds of crash: `crash p`, between steps, after the framework's write of
@@ -72,7 +72,7 @@ a condition of its own.
 
 ## What differs from `RStsVariant`, and why
 
-The clock advances by an environment step of its own, `setClock` (`RStsVariant2.Spec.Protocol`), so
+The clock advances by an environment step of its own, `setClock` (`RealStsMulticastMultisetLog.Spec.Protocol`), so
 the conditions on clocks read `setClock` steps: `ClockWithinSkewR` takes the place of
 `TickWithinSkewR`, and the change of each clock to each reading and the tick at it are asked by two
 conditions, `ClockAdvancesWithinR` and `TicksWithinR` (`DiligentWithinR` is their conjunction). `RestartNotBack` is gone: no step sets a clock back, since a restart leaves the
@@ -82,14 +82,14 @@ deadline functions of the message and of the real time a deadline counts from (s
 Every change is listed in `experiments/r-sts-variant-2/CHANGES.md`.
 
 Since 29 Oct 2026 a delivery `deliver p e` to a corrupted validator `p` is a step of the bare
-framework (`deliverSpec`, `RStsVariant2.Spec.Protocol`): it files the message into `p`'s view and runs
+framework (`deliverSpec`, `RealStsMulticastMultisetLog.Spec.Protocol`): it files the message into `p`'s view and runs
 no protocol code. The network's conditions never meet it,
 since a corrupted validator takes no acting step and is not up.
 -/
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 open Observable
 
@@ -105,12 +105,12 @@ throughout a real-time window states a condition of its own on the configuration
 the window (`Execution.InForce`), for example that the node is outside `crashed` and its local
 state is known in each. -/
 
-/-- `NoCrashDuring` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `NoCrashDuring` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `NoCrashDuring`, over the runs of a protocol, is this
-    definition at the run (`noCrashDuring_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`).
+    definition at the run (`noCrashDuring_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`).
     On a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -131,10 +131,10 @@ def NoCrashDuringG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: no step of `x` is labelled `crashDuring`.
 
     Defined as `NoCrashDuringG` at the run `x`, the one formula of this condition
-    (`noCrashDuring_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`noCrashDuring_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def NoCrashDuring {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
   NoCrashDuringG x
@@ -164,13 +164,13 @@ nodes (D-DNS2 (a)): `ΔClockAhead`, how far a clock may run ahead of the real ti
   `TicksWithinR ΔClockBehind` (their conjunction is `DiligentWithinR`). That the real
   time does not stop is the field `Execution.progress`, not a condition. -/
 
-/-- `ClockWithinSkewR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `ClockWithinSkewR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `ClockWithinSkewR`, over the runs of a protocol, is
     this definition at the run (`clockWithinSkewR_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `ClockWithinSkewR`'s docstring reads this
@@ -203,20 +203,20 @@ def ClockWithinSkew {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     `t − ΔClockAhead` and no later than `t + ΔClockBehind`.
 
     Defined as `ClockWithinSkew` at the run `x`, the one formula of this condition
-    (`clockWithinSkewR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`clockWithinSkewR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def ClockWithinSkewR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   ClockWithinSkew ΔClockAhead ΔClockBehind x
 
-/-- `ClockNotAheadR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `ClockNotAheadR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `ClockNotAheadR`, over the runs of a protocol, is this
-    definition at the run (`clockNotAheadR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`).
+    definition at the run (`clockNotAheadR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`).
     On a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -236,20 +236,20 @@ abbrev ClockNotAhead {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Ms
     to read it at most `ΔClockBehind` after.
 
     Defined as `ClockNotAhead` at the run `x`, the one formula of this condition
-    (`clockNotAheadR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`clockNotAheadR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 abbrev ClockNotAheadR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   ClockNotAhead ΔClockBehind x
 
-/-- `ClockAtTimeR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `ClockAtTimeR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `ClockAtTimeR`, over the runs of a protocol, is this
-    definition at the run (`clockAtTimeR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On
+    definition at the run (`clockAtTimeR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On
     a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -267,10 +267,10 @@ abbrev ClockAtTime {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: every node's clock comes to read each reading `t` at the real time `t`.
 
     Defined as `ClockAtTime` at the run `x`, the one formula of this condition (`clockAtTimeR_iff`,
-    by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's
+    by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's
     own, so this docstring reads that formula. A hypothesis taken apart shows the class's readings
     (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 abbrev ClockAtTimeR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
   ClockAtTime x
@@ -304,13 +304,13 @@ def StrongFair {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Ms
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (a : Action Node Msg Ev) : Prop :=
   (∀ i : Nat, ∃ j, i ≤ j ∧ x.Enabled j a) → ∀ i : Nat, ∃ j, i ≤ j ∧ x.lbl j = a
 
-/-- `ClockAdvancesWithinR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`).
+/-- `ClockAdvancesWithinR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`).
     A condition on executions, not part of the bare framework: no step of the framework reads it,
     and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `ClockAdvancesWithinR`, over the runs of a protocol,
     is this definition at the run (`clockAdvancesWithinR_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `ClockAdvancesWithinR`'s docstring reads this
@@ -325,7 +325,7 @@ def StrongFair {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Ms
     The first case asks only that the step setting `p`'s clock to `t` happen. Its real time is
     bounded by `ClockWithinSkew`, another condition on executions, when a statement takes both: every
     step `setClock p t` is at a real time in `[t − ΔClockAhead, t + ΔClockBehind]`
-    (`clockAdvancesWithin_bounded`, `RStsVariant2.Analysis.Observable`, gives the bounded case back).
+    (`clockAdvancesWithin_bounded`, `RealStsMulticastMultisetLog.Analysis.Observable`, gives the bounded case back).
     So the formula reads no `ΔClockAhead`; the parameter stays, so that every statement taking the
     condition keeps its text. -/
 def ClockAdvancesWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
@@ -336,14 +336,14 @@ def ClockAdvancesWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
       (∃ j : Nat, i < j ∧ stamp x j ≤ t + ΔClockBehind ∧ (p ∈ crashed x j ∨ p ∈ adv x j))
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. While a node is up (not crashed, with
     its local state known) and not corrupted, its clock, once started at any reading, comes to every
     greater reading; a crash or a corruption by the real time `t + ΔClockBehind` releases the node
     from a reading `t`. The real time at which the clock comes to `t` is not bounded here: when a
     statement takes `ClockWithinSkewR` too, that condition puts it in the window of `t`, the
     real-time interval `[t − ΔClockAhead, t + ΔClockBehind]` (`clockAdvancesWithin_bounded`,
-    `RStsVariant2.Analysis.Observable`). The formula reads no `ΔClockAhead`; the parameter stays,
+    `RealStsMulticastMultisetLog.Analysis.Observable`). The formula reads no `ΔClockAhead`; the parameter stays,
     so that every statement taking the condition keeps its text.
 
     **Real times of steps and of configurations.** `x.stamp i` is the real time at which
@@ -442,20 +442,20 @@ def ClockAdvancesWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
     yet online is not read, and a clock that never starts is asked nothing.
 
     Defined as `ClockAdvancesWithin` at the run `x`, the one formula of this condition
-    (`clockAdvancesWithinR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`clockAdvancesWithinR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def ClockAdvancesWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   ClockAdvancesWithin ΔClockAhead ΔClockBehind x
 
-/-- `TicksWithinR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `TicksWithinR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `TicksWithinR`, over the runs of a protocol, is this
-    definition at the run (`ticksWithinR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On
+    definition at the run (`ticksWithinR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On
     a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -474,7 +474,7 @@ def TicksWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
           ∃ (a : NodeAction Node Msg Ev) (n : Nat), lbl x j = .crashDuring p a n)
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. A node up and honest when its clock
     comes to read `t` takes a tick while its clock reads `t`, by the real time `t + ΔClockBehind`,
     unless it is corrupted or crashes first.
@@ -545,20 +545,20 @@ def TicksWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     crashes first.
 
     Defined as `TicksWithin` at the run `x`, the one formula of this condition (`ticksWithinR_iff`,
-    by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's
+    by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's
     own, so this docstring reads that formula. A hypothesis taken apart shows the class's readings
     (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def TicksWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   TicksWithin ΔClockBehind x
 
-/-- `ActsWithinSkew` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `ActsWithinSkew` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `ActsWithinSkew`, over the runs of a protocol, is this
-    definition at the run (`actsWithinSkew_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`).
+    definition at the run (`actsWithinSkew_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`).
     On a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -573,7 +573,7 @@ def ActsWithinSkewG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     clock x i p = some t → stamp x (i + 1) ≤ t + ΔClockBehind
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. A node does not act at a stale reading:
     a tick or a restart taken while its clock reads `t` is at a real time at most `t + ΔClockBehind`.
 
@@ -619,21 +619,21 @@ def ActsWithinSkewG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     `t + ΔClockBehind`.
 
     Defined as `ActsWithinSkewG` at the run `x`, the one formula of this condition
-    (`actsWithinSkew_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`actsWithinSkew_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def ActsWithinSkew {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   ActsWithinSkewG ΔClockBehind x
 
-/-- `DiligentWithinR` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `DiligentWithinR` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `DiligentWithinR`, over the runs of a protocol, is
     this definition at the run (`diligentWithinR_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `DiligentWithinR`'s docstring reads this formula
@@ -646,7 +646,7 @@ abbrev DiligentWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
   ClockAdvancesWithin ΔClockAhead ΔClockBehind x ∧ TicksWithin ΔClockBehind x
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. It is both `ClockAdvancesWithinR` and
     `TicksWithinR`: an abbreviation of their conjunction, not a definition of its own; a statement
     that needs only one of the two takes that one.
@@ -677,10 +677,10 @@ abbrev DiligentWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
     the clock condition `ClockAdvancesWithinR` and the tick condition `TicksWithinR` hold.
 
     Defined as `DiligentWithin` at the run `x`, the one formula of this condition
-    (`diligentWithinR_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`diligentWithinR_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 abbrev DiligentWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
   DiligentWithin ΔClockAhead ΔClockBehind x
@@ -721,12 +721,12 @@ rounds of slot `t`", so a proposal sent outside its window is owed nothing — w
 `gossiped` filter as an extra hypothesis of the two. Left out until a model actually restricts
 it. -/
 
-/-- `Execution.ActingStep` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`).
+/-- `Execution.ActingStep` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`).
     A reading of executions, not part of the bare framework.
 
     This is the one formula of the reading: `Execution.ActingStep`, over the runs of a protocol, is
     this definition at the run (`Execution.actingStep_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.ActingStep`'s docstring reads this
@@ -753,19 +753,19 @@ def ActingStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     two.
 
     Defined as `ActingStepG` at the run `x`, the one formula of this reading
-    (`Execution.actingStep_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`Execution.actingStep_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.ActingStep {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (k : Nat) (p : Node) : Prop :=
   ActingStepG x k p
 
-/-- `TickStep` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A reading of
+/-- `TickStep` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A reading of
     executions, not part of the bare framework.
 
     This is the one formula of the reading: `TickStep`, over the runs of a protocol, is this
-    definition at the run (`tickStep_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On a
+    definition at the run (`tickStep_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On a
     run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is `x.stamp i`,
     `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is `x[i].view p`,
     `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and `x[i].crashed`), so
@@ -788,20 +788,20 @@ def TickStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: at step `k`, `p` ticks.
 
     Defined as `TickStepG` at the run `x`, the one formula of this reading (`tickStep_iff`, by
-    `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's own,
+    `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's own,
     so this docstring reads that formula. A hypothesis taken apart shows the class's readings
     (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def TickStep {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (k : Nat) (p : Node) : Prop :=
   TickStepG x k p
 
-/-- `Execution.UpBetween` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `Execution.UpBetween` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     reading of executions, not part of the bare framework.
 
     This is the one formula of the reading: `Execution.UpBetween`, over the runs of a protocol, is
     this definition at the run (`Execution.upBetween_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.UpBetween`'s docstring reads this
@@ -825,21 +825,21 @@ def UpBetweenG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     not corrupted.
 
     Defined as `UpBetweenG` at the run `x`, the one formula of this reading
-    (`Execution.upBetween_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`Execution.upBetween_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.UpBetween {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (i k : Nat) (p : Node) : Prop :=
   UpBetweenG x i k p
 
 /-- `Execution.UpAndHonestThroughout` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A condition on executions, not part of the bare framework: no
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A condition on executions, not part of the bare framework: no
     step of the framework reads it, and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `Execution.UpAndHonestThroughout`, over the runs of a
     protocol, is this definition at the run (`Execution.upAndHonestThroughout_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.UpAndHonestThroughout`'s docstring
@@ -867,21 +867,21 @@ def UpAndHonestThroughoutG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     and has come online.
 
     Defined as `UpAndHonestThroughoutG` at the run `x`, the one formula of this condition
-    (`Execution.upAndHonestThroughout_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a
+    (`Execution.upAndHonestThroughout_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a
     run the class's readings are the run's own, so this docstring reads that formula. A hypothesis
     taken apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.UpAndHonestThroughout {Node Msg NodeState Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (t t' : ℝ) (p : Node) :
     Prop :=
   UpAndHonestThroughoutG x t t' p
 
 /-- `Execution.UpAndHonestUntilActing` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A reading of executions, not part of the bare framework.
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A reading of executions, not part of the bare framework.
 
     This is the one formula of the reading: `Execution.UpAndHonestUntilActing`, over the runs of a
     protocol, is this definition at the run (`Execution.upAndHonestUntilActing_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.UpAndHonestUntilActing`'s docstring
@@ -913,10 +913,10 @@ def UpAndHonestUntilActingG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidab
     crashed, never corrupted, and has come online.
 
     Defined as `UpAndHonestUntilActingG` at the run `x`, the one formula of this reading
-    (`Execution.upAndHonestUntilActing_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on
+    (`Execution.upAndHonestUntilActing_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on
     a run the class's readings are the run's own, so this docstring reads that formula. A hypothesis
     taken apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.UpAndHonestUntilActing {Node Msg NodeState Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
     (x : Exec Pr) (t t' : ℝ) (p : Node) : Prop :=
@@ -942,11 +942,11 @@ noncomputable def deadlineOutside {Msg : Type} (tGST : ℝ) (ΔDelay : (m : Msg)
   if max t tGST + ΔDelay m ≤ tAsyncStart then max t tGST + ΔDelay m
   else max t (max tAsyncEnd tGST) + ΔDelay m
 
-/-- `DueBy` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A reading of
+/-- `DueBy` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A reading of
     executions, not part of the bare framework.
 
     This is the one formula of the reading: `DueBy`, over the runs of a protocol, is this definition
-    at the run (`dueBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On a run the class's
+    at the run (`dueBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's
     readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is
     `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i`
     and `crashed x i` are `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `DueBy`'s docstring reads
@@ -982,22 +982,22 @@ def DueByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: `e` was sent at step `i`, and its deadline has passed by the real time `t`.
 
     Defined as `DueByG` at the run `x`, the one formula of this reading (`dueBy_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's own, so this
+    `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's own, so this
     docstring reads that formula. A hypothesis taken apart shows the class's readings
     (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def DueBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : Exec Pr)
     (i : Nat) (e : Envelope Node Msg) (t : ℝ) : Prop :=
   DueByG dl x i e t
 
-/-- `DeliveredBeforeActing` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`).
+/-- `DeliveredBeforeActing` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`).
     A condition on executions, not part of the bare framework: no step of the framework reads it,
     and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `DeliveredBeforeActing`, over the runs of a protocol,
     is this definition at the run (`deliveredBeforeActing_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `DeliveredBeforeActing`'s docstring reads this
@@ -1017,7 +1017,7 @@ def DeliveredBeforeActingG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
         ∀ l : Nat, j < l → l < k → lbl x l ≠ .restart p false
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. Whenever a node `p` acts (at a step the
     reading `acting` names), every envelope addressed to `p` that was sent while `p` was up, with `p`
     up since, and whose deadline `dl` has passed, was delivered to `p` after that sending and before
@@ -1091,22 +1091,22 @@ def DeliveredBeforeActingG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     after that sending and before acting, with no memory-losing restart in between.
 
     Defined as `DeliveredBeforeActingG` at the run `x`, the one formula of this condition
-    (`deliveredBeforeActing_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`deliveredBeforeActing_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def DeliveredBeforeActing {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
     (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : Exec Pr) : Prop :=
   DeliveredBeforeActingG acting dl x
 
-/-- `CatchUpAfterRestart` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `CatchUpAfterRestart` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `CatchUpAfterRestart`, over the runs of a protocol, is
     this definition at the run (`catchUpAfterRestart_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `CatchUpAfterRestart`'s docstring reads this
@@ -1130,7 +1130,7 @@ def CatchUpAfterRestartG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableE
         ∀ (l : Nat) (keep : Bool), j < l → l < k → lbl x l ≠ .restart p keep
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. Whenever a node `p` acts (at a step the
     reading `acting` names), every envelope addressed to `p` and sent before some restart of `p` was
     delivered to `p` again after its last restart, once its deadline `dl` from the sending and the
@@ -1208,22 +1208,22 @@ def CatchUpAfterRestartG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableE
     passed.
 
     Defined as `CatchUpAfterRestartG` at the run `x`, the one formula of this condition
-    (`catchUpAfterRestart_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`catchUpAfterRestart_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def CatchUpAfterRestart {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
     (dl : (m : Msg) → (tSend : ℝ) → ℝ) (dlW : (m : Msg) → (tRestart : ℝ) → ℝ) (x : Exec Pr) :
     Prop :=
   CatchUpAfterRestartG acting dl dlW x
 
-/-- `SyncedWithinBy` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `SyncedWithinBy` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `SyncedWithinBy`, over the runs of a protocol, is this
-    definition at the run (`syncedWithinBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`).
+    definition at the run (`syncedWithinBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`).
     On a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -1257,7 +1257,7 @@ def SyncedWithinByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
         p' ∉ crashed x n ∧ state x n p' ≠ none ∧ HonestG x n p')
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. What an honest node that is up serves,
     at a real time `t`, to a peer that asks either is already served by every node up and honest
     from `t` until it acts at or after the sync deadline `sync m t`, or reaches that node by that
@@ -1349,10 +1349,10 @@ def SyncedWithinByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     served it.
 
     Defined as `SyncedWithinByG` at the run `x`, the one formula of this condition
-    (`syncedWithinBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`syncedWithinBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def SyncedWithinBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
     (serves : (tClock : Time) → (st : NodeState) → (m : Msg) → Prop)
@@ -1365,13 +1365,13 @@ Two conditions on executions that statement 4 over the runs of a protocol (`expe
 takes as hypotheses: `TickOncePerReading`, at most one tick of a node at each reading of its clock,
 and `UnforgeableSends`, the adversary's half of unforgeability. -/
 
-/-- `TickOncePerReading` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `TickOncePerReading` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `TickOncePerReading`, over the runs of a protocol, is
     this definition at the run (`tickOncePerReading_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `TickOncePerReading`'s docstring reads this
@@ -1385,7 +1385,7 @@ def TickOncePerReadingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
     lbl x j = .tick p → clock x j p = some t → i = j
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. A node takes at most one tick at each
     reading of its clock.
 
@@ -1413,10 +1413,10 @@ def TickOncePerReadingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
     node ticks at most once while its clock shows any one reading.
 
     Defined as `TickOncePerReadingG` at the run `x`, the one formula of this condition
-    (`tickOncePerReading_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`tickOncePerReading_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def TickOncePerReading {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
   TickOncePerReadingG x
@@ -1433,14 +1433,14 @@ class MessageAuthorship (Msg : Type) (Node : outParam Type) where
   /-- `carries m m'`: the object of the message `m` includes the object of the message `m'`. -/
   carries : (m : Msg) → (m' : Msg) → Prop
 
-/-- `UnforgeableSends` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `UnforgeableSends` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis. Who an object is attributed to, and which objects a message
     includes, are read through the class `MessageAuthorship` on the message type.
 
     This is the one formula of the condition: `UnforgeableSends`, over the runs of a protocol, is
     this definition at the run (`unforgeableSends_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `UnforgeableSends`'s docstring reads this
@@ -1461,7 +1461,7 @@ def UnforgeableSendsG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
           ∃ e' ∈ sent x i, e'.msg = mObject ∨ MessageAuthorship.carries e'.msg mObject)
 
 /-- A condition on executions, not part of the bare framework: the step relation and `Init`
-    (`RStsVariant2.Spec.Protocol`) and the executions (`RStsVariant2.Spec.Execution`) neither read
+    (`RealStsMulticastMultisetLog.Spec.Protocol`) and the executions (`RealStsMulticastMultisetLog.Spec.Execution`) neither read
     nor imply it, and a statement takes it as a hypothesis. At every step that is neither a tick nor
     a delivery, each envelope put on the wire is a copy of a signed message already on it, or is
     signed by a corrupted validator and forges no honest validator: neither its message's object
@@ -1510,10 +1510,10 @@ def UnforgeableSendsG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
 
     Defined as `UnforgeableSendsG` at the run `x`, the one formula of this condition, with the class
     `MessageAuthorship` read as `author` and `carries` (`unforgeableSends_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's own, so this
+    `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's own, so this
     docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def UnforgeableSends {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (author : (m : Msg) → Option Node)
     (carries : (m : Msg) → (m' : Msg) → Prop) (x : Exec Pr) : Prop :=
@@ -1527,7 +1527,7 @@ Conditions that a statement about one asynchronous period after a healing phase 
 execution and the parts of the statements they use. What a condition reads of the protocol (what a
 node's state holds, the block a message carries, the validator set at a block, the committees) it
 takes as a parameter; the types of those parameters are on the page
-`RStsVariant2.Spec.ValidatorSets`. One of the definitions, `AsyncPeriodEndsInTime`, reads no
+`RealStsMulticastMultisetLog.Spec.ValidatorSets`. One of the definitions, `AsyncPeriodEndsInTime`, reads no
 execution: it is a condition on a statement's parameters. -/
 
 /-- A condition on the parameters of a statement, which reads no execution and is not part of the
@@ -1576,12 +1576,12 @@ class BlockRegistry (Block : Type) (Node : outParam Type) where
   registry : (B : Block) → Registry Node
 
 /-- `Execution.InHonestTreeBy` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`) whose node states have a `BlockTree`. A reading of executions,
+    (`RealStsMulticastMultisetLog.Spec.Observable`) whose node states have a `BlockTree`. A reading of executions,
     not part of the bare framework.
 
     This is the one formula of the reading: `Execution.InHonestTreeBy x BlockTree.tree`, over the
     runs of a protocol whose memory states have a `BlockTree`, is this definition at the run
-    (`Execution.inHonestTreeBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On a run the
+    (`Execution.inHonestTreeBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the
     class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is `x.stamp i`,
     `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is `x[i].view p`,
     `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and `x[i].crashed`), so
@@ -1602,10 +1602,10 @@ def InHonestTreeByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [Decidable
 
     Defined as `InHonestTreeByG` at the run `x`, the one formula of this reading, with the tree of a
     local state `l` read as `held l.st` (`Execution.inHonestTreeBy_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`): on a run the class's readings are the run's own, so this
+    `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's readings are the run's own, so this
     docstring reads that formula. A hypothesis taken apart shows the class's readings
     (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.InHonestTreeBy {Node Msg NodeState Ev Block : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (held : (st : NodeState) → Finset Block) (tBy : ℝ) (B : Block) : Prop :=
@@ -1613,11 +1613,11 @@ def Execution.InHonestTreeBy {Node Msg NodeState Ev Block : Type} [DecidableEq N
   InHonestTreeByG x tBy B
 
 /-- `Execution.HonestSentBy` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A reading of executions, not part of the bare framework.
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A reading of executions, not part of the bare framework.
 
     This is the one formula of the reading: `Execution.HonestSentBy`, over the runs of a protocol,
     is this definition at the run (`Execution.honestSentBy_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.HonestSentBy`'s docstring reads this
@@ -1640,22 +1640,22 @@ def HonestSentByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq
     Read aloud: by the real time `tBy`, some honest node has sent `B`.
 
     Defined as `HonestSentByG` at the run `x`, the one formula of this reading
-    (`Execution.honestSentBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`Execution.honestSentBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def Execution.HonestSentBy {Node Msg NodeState Ev Block : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (blockOf : (m : Msg) → Option Block) (tBy : ℝ) (B : Block) : Prop :=
   HonestSentByG x blockOf tBy B
 
 /-- `AdversaryUnderIntersectionBy` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A condition on executions, not part of the bare framework: no
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A condition on executions, not part of the bare framework: no
     step of the framework reads it, and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `AdversaryUnderIntersectionBy`, over the runs of a
     protocol, is this definition at the run (`adversaryUnderIntersectionBy_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `AdversaryUnderIntersectionBy`'s docstring reads
@@ -1676,22 +1676,22 @@ def AdversaryUnderIntersectionByG {X Node Msg L Ev : Type} [DecidableEq Node] [D
     share.
 
     Defined as `AdversaryUnderIntersectionByG` at the run `x`, the one formula of this condition
-    (`adversaryUnderIntersectionBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run
+    (`adversaryUnderIntersectionBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run
     the class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def AdversaryUnderIntersectionBy {Node Msg NodeState Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (reg reg' : Registry Node) (tBy : ℝ)
     (x : Exec Pr) : Prop :=
   AdversaryUnderIntersectionByG reg reg' tBy x
 
 /-- `AdversaryUnderQuorumBy` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A condition on executions, not part of the bare framework: no
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A condition on executions, not part of the bare framework: no
     step of the framework reads it, and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `AdversaryUnderQuorumBy`, over the runs of a protocol,
     is this definition at the run (`adversaryUnderQuorumBy_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `AdversaryUnderQuorumBy`'s docstring reads this
@@ -1708,15 +1708,15 @@ def AdversaryUnderQuorumByG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidab
     Read aloud: up to `tBy`, the corrupted validators weigh less than a quorum.
 
     Defined as `AdversaryUnderQuorumByG` at the run `x`, the one formula of this condition
-    (`adversaryUnderQuorumBy_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`adversaryUnderQuorumBy_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def AdversaryUnderQuorumBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (reg : Registry Node) (tBy : ℝ) (x : Exec Pr) : Prop :=
   AdversaryUnderQuorumByG reg tBy x
 
-/-- `WeightBounds` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `WeightBounds` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
@@ -1726,7 +1726,7 @@ def AdversaryUnderQuorumBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [De
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
     `x[i].crashed`), so on a run of a protocol whose memory states have a `BlockTree` it says what
     `WeightBounds BlockTree.tree BlockRegistry.registry` says (`weightBounds_iff`, field by field,
-    `RStsVariant2.Analysis.Observable`), whose docstring reads it over the run's own readings.
+    `RealStsMulticastMultisetLog.Analysis.Observable`), whose docstring reads it over the run's own readings.
 
     The blocks of a node are read through the class `BlockTree` on the state of type `L` the
     execution records (on a run, its local state `l`, whose tree is that of its memory state
@@ -1751,7 +1751,7 @@ structure WeightBoundsG {X Node Msg L Ev Block : Type} [DecidableEq Node] [Decid
     node's blocks through the class `BlockTree` and a block's validator set through the class
     `BlockRegistry`; on every run of a protocol whose memory states have a `BlockTree` and whose
     blocks have a `BlockRegistry`, `WeightBounds BlockTree.tree BlockRegistry.registry` and
-    `WeightBoundsG` agree (`weightBounds_iff`, field by field, `RStsVariant2.Analysis.Observable`).
+    `WeightBoundsG` agree (`weightBounds_iff`, field by field, `RealStsMulticastMultisetLog.Analysis.Observable`).
 
     `WeightBounds` keeps its own fields rather than being defined as `WeightBoundsG` at the run:
     such a definition would have no fields `WeightBounds.third` and `WeightBounds.quorum` and no
@@ -1768,12 +1768,12 @@ structure WeightBounds {Node Msg NodeState Ev Block : Type} [DecidableEq Node] [
   `t` weigh less than that block's quorum. -/
   quorum : ∀ (t : ℝ) (B : Block), x.InHonestTreeBy held t B → AdversaryUnderQuorumBy (registry B) t x
 
-/-- `HealingPhase` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`). A
+/-- `HealingPhase` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`). A
     condition on executions, not part of the bare framework: no step of the framework reads it, and
     a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `HealingPhase`, over the runs of a protocol, is this
-    definition at the run (`healingPhase_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`). On
+    definition at the run (`healingPhase_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`). On
     a run the class's readings are the run's own (`lbl x j` is `x.lbl j`, `stamp x i` is
     `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
     `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
@@ -1794,20 +1794,20 @@ def HealingPhaseG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: from `tGST` on, during the phase, every honest node is online and up.
 
     Defined as `HealingPhaseG` at the run `x`, the one formula of this condition
-    (`healingPhase_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the class's
+    (`healingPhase_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the class's
     readings are the run's own, so this docstring reads that formula. A hypothesis taken apart shows
     the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set `observable_exec`
-    (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def HealingPhase {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (tGST tGAT tAwakeEnd : ℝ) (x : Exec Pr) : Prop :=
   HealingPhaseG tGST tGAT tAwakeEnd x
 
 /-- `Execution.MostOfCommittee` over any execution with an `Observable`
-    (`RStsVariant2.Spec.Observable`). A reading of executions, not part of the bare framework.
+    (`RealStsMulticastMultisetLog.Spec.Observable`). A reading of executions, not part of the bare framework.
 
     This is the one formula of the reading: `Execution.MostOfCommittee`, over the runs of a
     protocol, is this definition at the run (`Execution.mostOfCommittee_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `Execution.MostOfCommittee`'s docstring reads
@@ -1836,10 +1836,10 @@ noncomputable def MostOfCommitteeG {X Node Msg L Ev : Type} [DecidableEq Node]
     of its members satisfy `P` than do not.
 
     Defined as `MostOfCommitteeG` at the run `x`, the one formula of this reading
-    (`Execution.mostOfCommittee_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run
+    (`Execution.mostOfCommittee_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run
     the class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 noncomputable def Execution.MostOfCommittee {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (committee : CommitteeSpec Node NodeState) (P : (v : Node) → Prop) : Prop :=
@@ -1883,7 +1883,7 @@ abbrev ObservableWithCommittees.ofCommittees {X Node Msg L Ev : Type} [Observabl
     This is the one formula of the condition: `CommitteeSleepinessFrom`, over the runs of a
     protocol, is this definition at the run read with its committees through
     `ObservableWithCommittees.ofCommittees` (`committeeSleepinessFrom_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `CommitteeSleepinessFrom`'s docstring reads this
@@ -1913,10 +1913,10 @@ noncomputable def CommitteeSleepinessFromG {X Node Msg L Ev : Type} [DecidableEq
 
     Defined as `CommitteeSleepinessFromG` at the run `x` read with the committees `committees`
     through `ObservableWithCommittees.ofCommittees`, the one formula of this condition
-    (`committeeSleepinessFrom_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`committeeSleepinessFrom_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 noncomputable def CommitteeSleepinessFrom {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev}
     (committees : (ci : Nat) → CommitteeSpec Node NodeState) (tFrom : ℝ) (x : Exec Pr) : Prop :=
@@ -1930,7 +1930,7 @@ noncomputable def CommitteeSleepinessFrom {Node Msg NodeState Ev : Type}
     This is the one formula of the condition: `AsyncPeriodSleepiness`, over the runs of a protocol,
     is this definition at the run read with its committees through `ObservableWithCommittees.ofCommittees`
     (`asyncPeriodSleepiness_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `AsyncPeriodSleepiness`'s docstring reads this
@@ -1964,10 +1964,10 @@ noncomputable def AsyncPeriodSleepinessG {X Node Msg L Ev : Type} [DecidableEq N
 
     Defined as `AsyncPeriodSleepinessG` at the run `x` read with the committees `committees`
     through `ObservableWithCommittees.ofCommittees`, the one formula of this condition
-    (`asyncPeriodSleepiness_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`asyncPeriodSleepiness_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 noncomputable def AsyncPeriodSleepiness {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev}
     (committees : (ci : Nat) → CommitteeSpec Node NodeState)
@@ -1976,13 +1976,13 @@ noncomputable def AsyncPeriodSleepiness {Node Msg NodeState Ev : Type}
     (ObservableWithCommittees.ofCommittees fun _ ci => (committees ci).comap fun l => l.st) tPreAsync
     ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery x
 
-/-- `HonestProposerThrough` over any execution with an `Observable` (`RStsVariant2.Spec.Observable`).
+/-- `HonestProposerThrough` over any execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`).
     A condition on executions, not part of the bare framework: no step of the framework reads it,
     and a statement takes it as a hypothesis.
 
     This is the one formula of the condition: `HonestProposerThrough`, over the runs of a protocol,
     is this definition at the run (`honestProposerThrough_iff`, by `Iff.rfl`,
-    `RStsVariant2.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
+    `RealStsMulticastMultisetLog.Analysis.Observable`). On a run the class's readings are the run's own (`lbl x j`
     is `x.lbl j`, `stamp x i` is `x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is
     `x[i][p]`, `view x i p` is `x[i].view p`, `sent x i`, `adv x i` and `crashed x i` are
     `x[i].sent`, `x[i].adv` and `x[i].crashed`), so `HonestProposerThrough`'s docstring reads this
@@ -2005,13 +2005,13 @@ def HonestProposerThroughG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     `tPreAsync`.
 
     Defined as `HonestProposerThroughG` at the run `x`, the one formula of this condition
-    (`honestProposerThrough_iff`, by `Iff.rfl`, `RStsVariant2.Analysis.Observable`): on a run the
+    (`honestProposerThrough_iff`, by `Iff.rfl`, `RealStsMulticastMultisetLog.Analysis.Observable`): on a run the
     class's readings are the run's own, so this docstring reads that formula. A hypothesis taken
     apart shows the class's readings (`Observable.stamp x i` for `x.stamp i`); the simp set
-    `observable_exec` (`RStsVariant2.Analysis.Observable`) rewrites them to the run's own. -/
+    `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`) rewrites them to the run's own. -/
 def HonestProposerThrough {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (tAwakeEnd tPreAsync tProposalStart : ℝ)
     (vProposer : Node) (x : Exec Pr) : Prop :=
   HonestProposerThroughG tAwakeEnd tPreAsync tProposalStart vProposer x
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

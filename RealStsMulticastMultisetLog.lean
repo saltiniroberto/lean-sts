@@ -1,9 +1,9 @@
 module
-public import RStsVariant2.Spec.Message
-public import RStsVariant2.Spec.Protocol
-public import RStsVariant2.Spec.Execution
-public import RStsVariant2.Spec.ValidatorSets
-public import RStsVariant2.Spec.Conditions
+public import RealStsMulticastMultisetLog.Spec.Message
+public import RealStsMulticastMultisetLog.Spec.Protocol
+public import RealStsMulticastMultisetLog.Spec.Execution
+public import RealStsMulticastMultisetLog.Spec.ValidatorSets
+public import RealStsMulticastMultisetLog.Spec.Conditions
 
 @[expose] public section
 
@@ -11,7 +11,7 @@ public import RStsVariant2.Spec.Conditions
 # The sts variant in real time, its clock advanced by a step of its own — the root module
 
 A copy of `RStsVariant`'s specification pages (`experiments/r-sts-variant/RStsVariant/Spec/`, taken
-2026-10-28 at `dev` `650afe543`) into the namespace `RStsVariant2`, changed so that a node's clock
+2026-10-28 at `dev` `650afe543`) into the namespace `RealStsMulticastMultisetLog`, changed so that a node's clock
 advances by an environment step of its own, `setClock`, which runs no protocol code and is taken
 whether the node is up or crashed. Every other node event runs the protocol at the stored reading, and a
 restart leaves the clock as it is. Since 29 Oct 2026 a validator's local state may be unknown

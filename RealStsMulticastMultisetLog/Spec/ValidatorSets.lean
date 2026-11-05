@@ -9,19 +9,19 @@ public import Mathlib.Data.Real.Basic
 /-!
 # Validator sets, their weights, and committees
 
-What some conditions on executions (`RStsVariant2.Spec.Conditions`) read besides an execution: the
+What some conditions on executions (`RealStsMulticastMultisetLog.Spec.Conditions`) read besides an execution: the
 validator set as a protocol has it at a block (`Registry`) and the weight arithmetic over it
 (`counted`, `IsQuorum`, `quorumPairs`, `guaranteed`); a committee's specification
 (`SleepinessWindow`, `CommitteeSpec`, and `CommitteeSpec.comap`, a committee read through a function of
 what its members are computed from); and `MostOf`, a majority count over a set of validators.
-None of them reads an execution, and the bare framework (`RStsVariant2.Spec.Protocol`,
-`RStsVariant2.Spec.Execution`) reads none of them: a statement passes them to a condition as
+None of them reads an execution, and the bare framework (`RealStsMulticastMultisetLog.Spec.Protocol`,
+`RealStsMulticastMultisetLog.Spec.Execution`) reads none of them: a statement passes them to a condition as
 parameters, the protocol's own.
 -/
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-! ### The validator set and its weights -/
 
@@ -107,4 +107,4 @@ def CommitteeSpec.comap {Node NodeInfo L : Type} (f : (l : L) → NodeInfo)
   sleepinessWindow := committee.sleepinessWindow
   tSyncNeededUntil := committee.tSyncNeededUntil
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

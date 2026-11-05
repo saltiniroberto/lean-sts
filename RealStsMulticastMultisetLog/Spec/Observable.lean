@@ -1,12 +1,12 @@
 module
-public import RStsVariant2.Spec.Execution
+public import RealStsMulticastMultisetLog.Spec.Execution
 
 @[expose] public section
 
 /-!
 # Observables: what a condition on executions reads of an execution, as a class
 
-The conditions on executions of `RStsVariant2.Spec.Conditions` read a run only through a few
+The conditions on executions of `RealStsMulticastMultisetLog.Spec.Conditions` read a run only through a few
 readings: the action of each step, the real time at which each configuration is entered, and, in
 each configuration, each node's clock, each node's local state (whether it is known, and what it
 is), each node's view, the sent envelopes, the corrupted set and the crashed set. The class
@@ -14,8 +14,8 @@ is), each node's view, the sent envelopes, the corrupted set and the crashed set
 protocol and no step relation. Each condition is written once over the class, so once for every
 type of execution that provides these readings.
 
-None of this is part of the bare framework. The bare framework is `RStsVariant2.Spec.Protocol`
-(states and steps) and `RStsVariant2.Spec.Execution` (executions); this page changes neither. It
+None of this is part of the bare framework. The bare framework is `RealStsMulticastMultisetLog.Spec.Protocol`
+(states and steps) and `RealStsMulticastMultisetLog.Spec.Execution` (executions); this page changes neither. It
 gives two instances of the class:
 
 * `Exec Pr`, the executions of a protocol `Pr`: each reading is the run's own (`x.lbl j`,
@@ -30,14 +30,14 @@ The local state is read through `state`, of a type `L` that the instance fixes: 
 (the blocks it holds, what it serves to a peer, the committee information it has) takes that
 reading as a parameter over `L`.
 
-`HonestG` and `InForceG` are the two readings of `RStsVariant2.Spec.Execution`, `Execution.Honest`
+`HonestG` and `InForceG` are the two readings of `RealStsMulticastMultisetLog.Spec.Execution`, `Execution.Honest`
 and `Execution.InForce`, written over the class. The suffix `G` marks a definition written over any
-type with an `Observable`; the definitions of `RStsVariant2.Spec.Execution` keep their names.
+type with an `Observable`; the definitions of `RealStsMulticastMultisetLog.Spec.Execution` keep their names.
 -/
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-- The questions a condition may ask about a history: what happened at each step, when it
     happened, and what each node had seen. Runs and observed runs are observable.
@@ -98,7 +98,7 @@ instance {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
   adv x i := x[i].adv
   crashed x i := x[i].crashed
 
-/-- A configuration of an observed run: the fields of a configuration of `RStsVariant2.Spec.Protocol`, with
+/-- A configuration of an observed run: the fields of a configuration of `RealStsMulticastMultisetLog.Spec.Protocol`, with
     a node's value `V` in place of its local state. Not part of the bare framework: no step relation
     reads it.
 
@@ -188,4 +188,4 @@ def InForceG {X Node Msg L Ev : Type} [Observable X Node Msg L Ev] (x : X) (i : 
     Prop :=
   stamp x i < s ∧ s ≤ stamp x (i + 1)
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

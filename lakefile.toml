@@ -42,8 +42,8 @@ globs = ["StsRelationalSetLog", "StsRelationalSetLog.+"]
 # `decoupled-consensus-lean` repository's `experiments/r-sts-variant-2/`; what changed against its parent is in
 # `RStsVariant2/CHANGES.md`. Imports Mathlib only.
 [[lean_lib]]
-name = "RStsVariant2"
-globs = ["RStsVariant2", "RStsVariant2.+"]
+name = "RealStsMulticastMultisetLog"
+globs = ["RealStsMulticastMultisetLog", "RealStsMulticastMultisetLog.+"]
 leanOptions = { autoImplicit = false, relaxedAutoImplicit = false }
 
 # A worked example, not a flavour: the Majorum protocol model, over the suggested flavour.

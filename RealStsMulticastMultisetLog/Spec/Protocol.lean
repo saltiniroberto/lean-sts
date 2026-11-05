@@ -1,6 +1,6 @@
 module
 public import Mathlib.Data.Set.Image
-public import RStsVariant2.Spec.Message
+public import RealStsMulticastMultisetLog.Spec.Message
 
 @[expose] public section
 
@@ -46,7 +46,7 @@ either: `setClock` changes the reading and runs no protocol code.
 
 This copy is the real-time form of the variant `StsVariant` (D-SVF7 (H)). A configuration carries
 no time and no step reads one: the real time at which each configuration of a run is entered is a
-field of the execution, `Execution.stamp` (D-DNS1 (a); `RStsVariant2.Spec.Execution`). There is one
+field of the execution, `Execution.stamp` (D-DNS1 (a); `RealStsMulticastMultisetLog.Spec.Execution`). There is one
 step relation, `spec`, and no step moves a time.
 
 * **`setClock p t` sets `p`'s clock to the reading `t` and runs no protocol code.** `p`'s clock is
@@ -65,7 +65,7 @@ step relation, `spec`, and no step moves a time.
   clock existing. The step relation does not limit the
   number of ticks at one reading: a protocol whose tick reaction must run once per reading keeps in
   its state the last reading it reacted to. Which ticks a run must contain, and by when, is a
-  fairness condition on executions (`TicksWithinR`, `RStsVariant2.Spec.Conditions`).
+  fairness condition on executions (`TicksWithinR`, `RealStsMulticastMultisetLog.Spec.Conditions`).
 * **`deliver p e` and `custom p ev` run their reactions at `p`'s clock reading**, and change no
   clock. The framework does not order a delivery and a tick at one reading (`Action.deliver`). A
   `deliver p e` at a corrupted `p` runs no reaction and reads no clock (section "Views").
@@ -73,7 +73,7 @@ step relation, `spec`, and no step moves a time.
   exists. The restarted node's state is rebuilt by `Protocol.restart`, which is handed the reading
   its clock holds then. So a node restarted while its clock reads `t` may then tick at `t`.
 * **What relates a reading `t` to the real time is a separate condition on executions, not part
-  of the step.** `ClockWithinSkewR ΔClockAhead ΔClockBehind` (`RStsVariant2.Spec.Conditions`)
+  of the step.** `ClockWithinSkewR ΔClockAhead ΔClockBehind` (`RealStsMulticastMultisetLog.Spec.Conditions`)
   says every `setClock p t` is taken at a real time in `[t − ΔClockAhead, t + ΔClockBehind]` (D-DNS2 (a)); one shared clock is
   its instance `ΔClockAhead = ΔClockBehind = 0`. Nothing in `spec` chooses the bounds.
 
@@ -234,9 +234,9 @@ in its node state. No reaction runs at the restart: the node's first reaction af
 its next tick, delivery or `custom` event. Since the view is kept, a promise that a restarted
 validator receives a message again is stated over the delivery steps after its last restart
 with `keep = false`, not over its view (the conditions on executions `DeliveredBeforeActing` and
-`CatchUpAfterRestart`, `RStsVariant2.Spec.Conditions`).
+`CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`).
 
-A model whose reactions are atomic assumes `NoCrashDuring` (`RStsVariant2.Spec.Conditions`): no
+A model whose reactions are atomic assumes `NoCrashDuring` (`RealStsMulticastMultisetLog.Spec.Conditions`): no
 step is a `crashDuring`, so every crash finds the disk holding `Pr.persist` of the state the last
 step left.
 
@@ -247,7 +247,7 @@ is permanent (`corrupt` only inserts), and a crashed honest node acts and receiv
 `setClock`), and a corrupted validator keeps nothing but its view (`corrupt` empties its local
 state and its clock, and neither `restart` nor `setClock` is enabled at it; deliveries go on
 filing messages into its view). Timing conditions are
-predicates on executions (`RStsVariant2.Spec.Conditions`), so different models impose
+predicates on executions (`RealStsMulticastMultisetLog.Spec.Conditions`), so different models impose
 different ones over the same step relation.
 -/
 
@@ -255,7 +255,7 @@ set_option autoImplicit false
 
 universe u v
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-- What a protocol reacts to. `Ev` is the protocol's own event type; use `Empty`
     if it has none. -/
@@ -431,7 +431,7 @@ structure Config (Node Msg NodeState : Type) where
       A multiset rather than a set: `∪` is lossy, so a reaction that re-sends a message
       already in the log would leave no trace, and the envelopes a step put on the wire are
       `post.sent - pre.sent` (what `DueBy` reads, part of the conditions on executions
-      `DeliveredBeforeActing` and `CatchUpAfterRestart`, `RStsVariant2.Spec.Conditions`). In the
+      `DeliveredBeforeActing` and `CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`). In the
       framework this is copied
       from, that also made a reaction a function of the configurations before and after it;
       with disk writes among a reaction's effects it no longer is, and `NodeStep` is an
@@ -607,7 +607,7 @@ def applyCrashDuring {Node Msg NodeState : Type} [DecidableEq Node] (p : Node)
 /-- `p`'s clock now reads `t`, and exists if it did not: the effect of the step
     `Action.setClock`. One of the two writes of `Config.clock`; the other is the step `corrupt p`,
     which sets `p`'s clock to `none` (`spec`). Which readings a run sets, and at which real times,
-    are conditions on executions (`RStsVariant2.Spec.Conditions`). -/
+    are conditions on executions (`RealStsMulticastMultisetLog.Spec.Conditions`). -/
 def setClock {Node Msg NodeState : Type} [DecidableEq Node] (p : Node) (t : Time)
     (c : Config Node Msg NodeState) : Config Node Msg NodeState :=
   { c with clock := fun q => if p = q then some t else c.clock q }
@@ -710,7 +710,7 @@ def NodeAction.prepare {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decida
 
     * A tick: no further condition. The tick reaction runs at `p`'s current clock reading. The
       step relation allows any number of ticks at one reading; which ticks a run must contain,
-      and by when, is a condition on executions (`TicksWithinR`, `RStsVariant2.Spec.Conditions`).
+      and by when, is a condition on executions (`TicksWithinR`, `RealStsMulticastMultisetLog.Spec.Conditions`).
     * A delivery of `e`: `e` is on the wire and names `p` among its recipients. Any sent
       envelope may be delivered to any of its recipients that is up and honest, at any real
       time; here, delivery to a crashed honest validator, or to one whose local state is
@@ -947,4 +947,4 @@ def system (Node Msg NodeState Ev : Type) [DecidableEq Node] [DecidableEq Msg]
   Init := Init
   Step := Step Pr
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

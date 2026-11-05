@@ -13,7 +13,7 @@ adversary, or a protocol.
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-- A node's clock reading, an integer — Majorum §Model has "time is divided into
     discrete rounds", TOB-SVD counts time steps.
@@ -88,4 +88,4 @@ structure Envelope (Node Msg : Type) extends SignedMsg Node Msg where
 def Addressed.sign {Node Msg : Type} (a : Addressed Node Msg) (p : Node) : Envelope Node Msg :=
   { sender := p, msg := a.msg, recipients := a.recipients }
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

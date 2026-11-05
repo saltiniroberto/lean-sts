@@ -1,13 +1,13 @@
 module
-public import RStsVariant2.Spec.Conditions
-public import RStsVariant2.Analysis.ObservableSimpAttr
+public import RealStsMulticastMultisetLog.Spec.Conditions
+public import RealStsMulticastMultisetLog.Analysis.ObservableSimpAttr
 
 @[expose] public section
 
 /-!
 # The conditions on executions, written over `Observable`: what they say on a run and on the run as observed
 
-Theorems about the definitions of `RStsVariant2.Spec.Observable` and `RStsVariant2.Spec.Conditions`,
+Theorems about the definitions of `RealStsMulticastMultisetLog.Spec.Observable` and `RealStsMulticastMultisetLog.Spec.Conditions`,
 kept out of the specification so that it reads as definitions only. No condition on executions is
 assumed, and nothing here is part of the bare framework.
 
@@ -17,7 +17,7 @@ assumed, and nothing here is part of the bare framework.
   over `Exec Pr` sees the class's readings; `dsimp only [observable_exec] at h` turns them back into
   the run's own.
 * **On a run, each name over `Exec Pr` is the definition over the class.** For each definition of
-  `RStsVariant2.Spec.Conditions` written once over `Observable`, the theorem `…_iff` states that on a
+  `RealStsMulticastMultisetLog.Spec.Conditions` written once over `Observable`, the theorem `…_iff` states that on a
   run `x : Exec Pr` the name over `Exec Pr` is that definition at `x`, a parameter that reads a node's
   memory state `st` passed to it as `fun l => … l.st`, and the tree of a node read through the class
   `BlockTree` (the run form passed `BlockTree.tree`) and the validator set at a block read through the
@@ -35,7 +35,7 @@ assumed, and nothing here is part of the bare framework.
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 open Observable
 
@@ -385,7 +385,7 @@ theorem honestG_observe (i : Nat) (p : Node) : HonestG (observe f x) i p ↔ Hon
 theorem inForceG_observe (i : Nat) (s : ℝ) : InForceG (observe f x) i s ↔ InForceG x i s :=
   Iff.rfl
 
-/-! #### The conditions and readings of `RStsVariant2.Spec.Conditions` -/
+/-! #### The conditions and readings of `RealStsMulticastMultisetLog.Spec.Conditions` -/
 
 /-- `NoCrashDuringG` on a run as observed is `NoCrashDuringG` on the run. -/
 theorem noCrashDuringG_observe : NoCrashDuringG (observe f x) ↔ NoCrashDuringG x :=
@@ -637,4 +637,4 @@ theorem honestProposerThroughG_observe (tAwakeEnd tPreAsync tProposalStart : ℝ
 
 end Observe
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

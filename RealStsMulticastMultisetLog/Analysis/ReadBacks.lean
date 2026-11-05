@@ -1,13 +1,13 @@
 module
-public import RStsVariant2.Spec.Protocol
+public import RealStsMulticastMultisetLog.Spec.Protocol
 
 @[expose] public section
 
 /-!
 # What the bare framework's helpers and reactions do
 
-Theorems about the helpers of the bare framework `RStsVariant2` (`RStsVariant2.Spec.Protocol`), kept
-out of the specification so that it reads as definitions only; `RStsVariant2.Analysis.Lemmas`
+Theorems about the helpers of the bare framework `RealStsMulticastMultisetLog` (`RealStsMulticastMultisetLog.Spec.Protocol`), kept
+out of the specification so that it reads as definitions only; `RealStsMulticastMultisetLog.Analysis.Lemmas`
 imports this page and goes on to the steps and the executions.
 
 * **Read-backs.** For each helper (`Config.setNode`, `receive`, `setClock`, `applyEffect`,
@@ -23,7 +23,7 @@ The read-backs that return an `if` (`receive_view`, `setClock_clock`) are cited 
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-! ### Read-backs of the helpers -/
 
@@ -750,4 +750,4 @@ theorem CrashDuringStep.sent_signed {Node Msg NodeState Ev : Type} [DecidableEq 
   rw [applyCrashDuring_sent] at henv
   exact (mem_applyEffects_sent_sub v pre _ henv).1
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

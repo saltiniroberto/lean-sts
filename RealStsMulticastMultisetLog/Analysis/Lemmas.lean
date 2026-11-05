@@ -1,6 +1,6 @@
 module
-public import RStsVariant2.Analysis.ReadBacks
-public import RStsVariant2.Spec.Execution
+public import RealStsMulticastMultisetLog.Analysis.ReadBacks
+public import RealStsMulticastMultisetLog.Spec.Execution
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Tactic.Linarith
 
@@ -9,10 +9,10 @@ public import Mathlib.Tactic.Linarith
 /-!
 # What the bare framework's steps and executions do
 
-Theorems about the step relation and the executions of the bare framework `RStsVariant2`
-(`RStsVariant2.Spec.Protocol`, `RStsVariant2.Spec.Execution`), kept out of the specification so
+Theorems about the step relation and the executions of the bare framework `RealStsMulticastMultisetLog`
+(`RealStsMulticastMultisetLog.Spec.Protocol`, `RealStsMulticastMultisetLog.Spec.Execution`), kept out of the specification so
 that it reads as definitions only. No condition on executions is assumed. The read-backs of the
-helpers are on `RStsVariant2.Analysis.ReadBacks`, which this page imports. In dependency order:
+helpers are on `RealStsMulticastMultisetLog.Analysis.ReadBacks`, which this page imports. In dependency order:
 
 * **The two eliminators.** `Step.elim`, one case per action with the delivery split by whether the
   recipient is corrupted, each case with the enabling condition and the next configuration written
@@ -29,7 +29,7 @@ helpers are on `RStsVariant2.Analysis.ReadBacks`, which this page imports. In de
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-! ### The eliminators -/
 
@@ -63,7 +63,7 @@ theorem Step.elim {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq
     -- the clock of `v`, not corrupted, set to `t`, greater than its reading when it exists
     (setClock : ∀ (d : Config Node Msg NodeState) (v : Node) (t : Time),
       v ∉ d.adv → (∀ r : Time, d.clock v = some r → r < t) →
-      motive (.setClock v t) d (RStsVariant2.setClock v t d))
+      motive (.setClock v t) d (Framework.RealStsMulticastMultisetLog.setClock v t d))
     -- the tick of `v`, up and honest, at its clock reading `t`
     (tick : ∀ (d : Config Node Msg NodeState) (v : Node) (l : Local Node Msg NodeState) (t : Time)
         (res : NodeStepResult Node NodeState Msg),
@@ -171,7 +171,7 @@ theorem Step.elimR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableE
     -- the clock of `v`, not corrupted, set to `t`, greater than its reading when it exists
     (setClock : ∀ (d : Config Node Msg NodeState) (v : Node) (t : Time),
       v ∉ d.adv → (∀ r : Time, d.clock v = some r → r < t) →
-      motive (.setClock v t) d (RStsVariant2.setClock v t d))
+      motive (.setClock v t) d (Framework.RealStsMulticastMultisetLog.setClock v t d))
     -- the tick of `v`, up and honest
     (tick : ∀ (d d' : Config Node Msg NodeState) (v : Node),
       v ∉ d.adv → v ∉ d.crashed → NodeStep Pr v .tick d d' → motive (.tick v) d d')
@@ -1034,4 +1034,4 @@ theorem Execution.clock_mono {Node Msg NodeState Ev : Type} [DecidableEq Node] [
     (hv : v ∉ x[j].adv) : t ≤ t' :=
   x.clock_le_of_le hi hj hij
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

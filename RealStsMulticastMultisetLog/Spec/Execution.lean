@@ -1,6 +1,6 @@
 module
 public import Mathlib.Data.Real.Basic
-public import RStsVariant2.Spec.Protocol
+public import RealStsMulticastMultisetLog.Spec.Protocol
 
 @[expose] public section
 
@@ -15,13 +15,13 @@ different ones over the same step relation.
 
 This page holds the framework's executions and the readings of an execution: `Execution`, its
 indexing, `Execution.InForce`, `Exec`, `Execution.Honest` and `Execution.Enabled`. The conditions on
-executions, which statements take as hypotheses, are on the page `RStsVariant2.Spec.Conditions`; the
+executions, which statements take as hypotheses, are on the page `RealStsMulticastMultisetLog.Spec.Conditions`; the
 framework assumes none of them.
 
 **Real time is the execution's.** An execution is a sequence of configurations and steps, each
 configuration entered at a real time, `Execution.stamp` (D-DNS1 (a)). The configurations carry no
-time and the step relation reads none (`RStsVariant2.Spec.Protocol`): the real time enters only
-through the stamps, which the conditions on executions (`RStsVariant2.Spec.Conditions`) read.
+time and the step relation reads none (`RealStsMulticastMultisetLog.Spec.Protocol`): the real time enters only
+through the stamps, which the conditions on executions (`RealStsMulticastMultisetLog.Spec.Conditions`) read.
 Several steps may share one stamp; their order
 in the sequence is then any order, so a delivery and a tick taken at one real time come in either
 order (D-ORD1 (b)). Two steps of one node may also share one real time. The environment's steps (a
@@ -38,7 +38,7 @@ it needs.
 
 Since 29 Oct 2026 a validator's local state may be unknown (before it first comes online, and
 from its corruption on), no clock exists at the start, and a restart needs the clock
-(`RStsVariant2.Spec.Protocol`, section "Unknown local state"). So `ClockAdvancesWithinR`, a
+(`RealStsMulticastMultisetLog.Spec.Protocol`, section "Unknown local state"). So `ClockAdvancesWithinR`, a
 condition on executions, asks every node's clock, once started at any reading, to come to every
 greater reading while the node is up (not crashed, with its local state known) and not
 corrupted, and asks nothing of the clock of a node crashed or not yet online; it does not ask a
@@ -49,12 +49,12 @@ D-RSV2-12 (b)).
 Since the same day every validator has a view in every configuration, `x[i].view p`, a field of the
 configuration rather than of the local state, and a delivery to a corrupted validator is a step of
 the run, which files the message into its view and runs no protocol code
-(`RStsVariant2.Spec.Protocol`, section "Views").
+(`RealStsMulticastMultisetLog.Spec.Protocol`, section "Views").
 -/
 
 set_option autoImplicit false
 
-namespace RStsVariant2
+namespace Framework.RealStsMulticastMultisetLog
 
 /-- An infinite execution in real time: the configuration after each number of steps, the action
     taken at each step, and the real time at which each configuration is entered.
@@ -162,4 +162,4 @@ def Execution.Enabled {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decidab
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (i : Nat) (a : Action Node Msg Ev) : Prop :=
   (spec Pr a).Enabled x[i]
 
-end RStsVariant2
+end Framework.RealStsMulticastMultisetLog

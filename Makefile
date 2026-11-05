@@ -2,7 +2,7 @@
 # no target that checks all of them -- the flavours share nothing, so a sweep only proves that
 # four things you did not touch still compile.
 
-FLAVOURS := StsMultisetLog StsStepInductive StsReactionInLabel StsConditionSplit StsRelationalSetLog RStsVariant2
+FLAVOURS := StsMultisetLog StsStepInductive StsReactionInLabel StsConditionSplit StsRelationalSetLog RealStsMulticastMultisetLog
 
 # Textual, so it also covers files a build would not reach. Backtick-quoted mentions in
 # docstrings are exempt. `native_decide` is banned too: it would let a `decide`-style claim be
