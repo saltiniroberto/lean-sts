@@ -108,7 +108,7 @@ permitted to act, at each time), the six transition labels `advance`, `tick`, `d
 executions, the network and fairness assumptions as predicates over executions, and the two
 models in `Models`.
 
-So each flavour below is a complete framework in its own right. What differs between the five
+So each flavour in the table is a complete framework in its own right. What differs between the five
 global-time flavours is **how `Step` is written down**, and what that costs every proof built on it — expand a row for
 the whole story.
 
