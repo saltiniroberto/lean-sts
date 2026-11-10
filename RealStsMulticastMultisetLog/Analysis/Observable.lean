@@ -598,9 +598,12 @@ theorem mostOfCommitteeG_observe (committee : CommitteeSpec Node V) (P : (v : No
   unfold MostOfCommitteeG
   simp only [state_observe, Option.map_eq_some_iff]
   constructor
-  · intro h v i l hl hh h1 h2
-    exact h v i (f l) ⟨l, hl, rfl⟩ hh h1 h2
-  · rintro h v i _ ⟨l, hl, rfl⟩ hh h1 h2
+  · rintro ⟨⟨v, i, _, ⟨l, hl, rfl⟩, hh, h1, h2⟩, h⟩
+    exact ⟨⟨v, i, l, hl, hh, h1, h2⟩,
+      fun v i l hl hh h1 h2 => h v i (f l) ⟨l, hl, rfl⟩ hh h1 h2⟩
+  · rintro ⟨⟨v, i, l, hl, hh, h1, h2⟩, h⟩
+    refine ⟨⟨v, i, f l, ⟨l, hl, rfl⟩, hh, h1, h2⟩, ?_⟩
+    rintro v i _ ⟨l, hl, rfl⟩ hh h1 h2
     exact h v i l hl hh h1 h2
 
 /-- `CommitteeSleepinessFromG` on a run as observed read with the committees `committees`, their

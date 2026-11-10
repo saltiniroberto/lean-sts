@@ -1441,24 +1441,29 @@ def HealingPhase {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq 
     `L` (on a run, its local state `l`, where `Execution.MostOfCommittee` computes them from its
     memory state `l.st`).
 
-    Read aloud: whenever an honest node computes the committee during its sleepiness window, more
-    of its members satisfy `P` than do not. -/
+    Read aloud: some honest node computes the committee during its sleepiness window, and whenever
+    one does, more of its members satisfy `P` than do not. -/
 noncomputable def MostOfCommitteeG {X Node Msg L Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] [Observable X Node Msg L Ev] (x : X)
     (committee : CommitteeSpec Node L) (P : (v : Node) → Prop) : Prop :=
+  -- some honest node is online in a configuration in force inside the committee's sleepiness window
+  (∃ (v : Node) (i : Nat) (l : L), state x i v = some l ∧ HonestG x i v ∧
+      committee.sleepinessWindow.tStart ≤ stamp x (i + 1) ∧
+      stamp x i ≤ committee.sleepinessWindow.tEnd) ∧
+  -- and every honest node online in such a configuration computes members most of which satisfy `P`
   ∀ (v : Node) (i : Nat) (l : L), state x i v = some l → HonestG x i v →
     committee.sleepinessWindow.tStart ≤ stamp x (i + 1) →
     stamp x i ≤ committee.sleepinessWindow.tEnd →
     MostOf (committee.members l) P
 
-/-- Most members of `committee` satisfy `P`, as any honest node computes the members from its
-    memory state, in any configuration of `x` within the committee's sleepiness window
-    (left at its start or later, entered at its end or earlier). A reading of an execution that the
-    conditions on executions `CommitteeSleepinessFrom` and `AsyncPeriodSleepiness` use; not part of
-    the bare framework.
+/-- Some honest node computes `committee` from its memory state in a configuration of `x` within
+    the committee's sleepiness window (left at its start or later, entered at its end or earlier),
+    and most members of `committee` satisfy `P` as any honest node computes them from its memory
+    state in any such configuration. A reading of an execution that the conditions on executions
+    `CommitteeSleepinessFrom` and `AsyncPeriodSleepiness` use; not part of the bare framework.
 
-    Read aloud: whenever an honest node computes the committee during its sleepiness window, more
-    of its members satisfy `P` than do not.
+    Read aloud: some honest node computes the committee during its sleepiness window, and whenever
+    one does, more of its members satisfy `P` than do not.
 
     Defined as `MostOfCommitteeG` at the run `x` (`Execution.mostOfCommittee_iff`). -/
 noncomputable def Execution.MostOfCommittee {Node Msg NodeState Ev : Type}
