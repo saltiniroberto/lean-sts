@@ -12,9 +12,9 @@ entered, and, in each configuration, each node's clock, each node's local state 
 known, and what it is), each node's view, the sent envelopes, the corrupted set and the crashed set.
 An observed run (`ObservedRun Node Msg Ev V`) is exactly these readings, with a value of a type `V`
 in place of each node's local state, and no step relation. Each condition is written once, on
-observed runs; a condition on a run `x : Exec Pr` is the condition on its observation
-`observe f x`, where `f` reads a local state as a value of `V` (`id` when the condition reads the
-local state itself).
+observed runs; a condition on a run `π : Exec Pr` is the condition on its observation
+`observe readLocal π`, where `readLocal` reads a local state as a value of `V` (`id` when the condition
+reads the local state itself).
 
 None of this is part of the bare framework. The bare framework is
 `RealStsMulticastMultisetLog.Spec.Protocol` (states and steps) and
@@ -102,21 +102,21 @@ def crashed (y : ObservedRun Node Msg Ev V) (i : Nat) : Finset Node := (y.cfg i)
 
 end ObservedRun
 
-/-- The run `x` as observed. `f` is the map from a local state to a node's value `V`; the result has
+/-- The run `π` as observed: `readLocal` reads a node's local state as a value of `V`; the result has
     the same actions, stamps, clocks, views, sent envelopes, corrupted and crashed sets, and each
-    known local state `l` replaced by `f l`. Not part of the bare framework.
+    known local state `l` replaced by `readLocal l`. Not part of the bare framework.
 
-    Read aloud: the run with each node's local state replaced by its image under `f`. -/
+    Read aloud: the run `π` with each node's local state replaced by what `readLocal` reads of it. -/
 def observe {Node Msg NodeState Ev V : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} (f : Local Node Msg NodeState → V) (x : Exec Pr) :
-    ObservedRun Node Msg Ev V where
-  cfg i := { nodes := fun p => (x[i][p]).map f, clock := x[i].clock, view := x[i].view,
-             sent := x[i].sent, adv := x[i].adv, crashed := x[i].crashed }
-  lbl := x.lbl
-  stamp := x.stamp
-  mono := x.mono
-  progress := x.progress
-  init_stamp := x.init_stamp
+    {Pr : Protocol Node Msg NodeState Ev} (readLocal : (l : Local Node Msg NodeState) → V)
+    (π : Exec Pr) : ObservedRun Node Msg Ev V where
+  cfg i := { nodes := fun p => (π[i][p]).map readLocal, clock := π[i].clock, view := π[i].view,
+             sent := π[i].sent, adv := π[i].adv, crashed := π[i].crashed }
+  lbl := π.lbl
+  stamp := π.stamp
+  mono := π.mono
+  progress := π.progress
+  init_stamp := π.init_stamp
 
 open ObservedRun
 
