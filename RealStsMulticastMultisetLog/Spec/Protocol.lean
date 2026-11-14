@@ -27,7 +27,7 @@ code.
 ## Real time is the execution's; the clock advances by a step of its own
 
 A configuration carries no time and no step reads one: the real time at which each configuration
-of a run is entered is a field of the execution, `Execution.stamp`
+of a run is entered is a field of the execution, `ObservedRun.stamp`
 (`RealStsMulticastMultisetLog.Spec.Execution`). There is one step relation, `spec`, and no step
 moves a time.
 
@@ -44,7 +44,7 @@ moves a time.
   changes no clock. It is enabled when `p` is up and honest, with its local state known and its
   clock existing. The step relation does not limit the number of ticks at one reading: a protocol
   whose tick reaction must run once per reading keeps in its state the last reading it reacted
-  to. Which ticks a run must contain, and by when, is a condition on executions (`TicksWithinR`,
+  to. Which ticks a run must contain, and by when, is a condition on executions (`TicksWithin`,
   `RealStsMulticastMultisetLog.Spec.Conditions`).
 * **`deliver p e` and `custom p ev` run their reactions at `p`'s clock reading**, and change no
   clock. The framework does not order a delivery and a tick at one reading (`Action.deliver`). A
@@ -53,7 +53,7 @@ moves a time.
   by `Protocol.restart`, which is handed the reading its clock holds then. So a node restarted
   while its clock reads `t` may then tick at `t`.
 * **What relates a reading `t` to the real time is a condition on executions, not part of the
-  step.** `ClockWithinSkewR ΔClockAhead ΔClockBehind`
+  step.** `ClockWithinSkew ΔClockAhead ΔClockBehind`
   (`RealStsMulticastMultisetLog.Spec.Conditions`) says every `setClock p t` is taken at a real time
   in `[t − ΔClockAhead, t + ΔClockBehind]`; one shared clock is its instance
   `ΔClockAhead = ΔClockBehind = 0`. Nothing in `spec` chooses the bounds.
@@ -319,14 +319,17 @@ def Protocol.initialLocal {Node Msg NodeState Ev : Type} (Pr : Protocol Node Msg
     (p : Node) (t : Time) : Local Node Msg NodeState :=
   { st := Pr.init t p, disk := Pr.persist (Pr.init t p) }
 
-/-- A global configuration. It carries no time: the real time at which a configuration of a run
-    is entered is the execution's (`Execution.stamp`).
+/-- A global configuration, with a value of the type `V` for each validator. It carries no time:
+    the real time at which a configuration is entered is the run's (`ObservedRun.stamp`). In a
+    run's configuration (`Config`) a validator's value is its local state; in an observed run's,
+    it is what is read of the local state.
 
-    Read aloud: every validator's local state, known or not, every validator's clock reading, if
-    its clock exists, every validator's view, every envelope ever put on the wire, the corrupted
+    Read aloud: every validator's value, known or not, every validator's clock reading, if its
+    clock exists, every validator's view, every envelope ever put on the wire, the corrupted
     validators and the crashed ones. -/
-structure Config (Node Msg NodeState : Type) where
-  /-- Each validator's local state: `some l` when it is known, `none` when it is unknown.
+structure ObservedConfig (Node Msg V : Type) where
+  /-- Each validator's value: `some l` when it is known, `none` when it is unknown. In a run's
+      configuration the value is the validator's local state, and what follows describes it.
 
       It is unknown before the validator first comes online and from the moment it is corrupted on:
       every validator starts with `none` (`Init`), `corrupt p` sets `p`'s to `none`, and a `restart`
@@ -334,7 +337,7 @@ structure Config (Node Msg NodeState : Type) where
       reading. A crash leaves it as it is: a crashed validator keeps its memory and its disk, which
       its restart reads. The view is not part of it (`view`). A validator whose local state is
       unknown takes no step that runs its reaction (`nodeSpec`). -/
-  nodes : Node → Option (Local Node Msg NodeState)
+  nodes : Node → Option V
   /-- Each validator's clock reading: `some t` while its clock exists, `none` otherwise: before it
       starts, and from the moment the validator is corrupted on.
 
@@ -390,11 +393,18 @@ structure Config (Node Msg NodeState : Type) where
       unless the validator is corrupted. -/
   crashed : Finset Node
 
-/-- `c[p]` is `p`'s local state, `some l` when it is known and `none` when it is unknown
-    (`Config.nodes`). Indexing is total, hence the trivial side-condition. -/
-instance {Node Msg NodeState : Type} :
-    GetElem (Config Node Msg NodeState) Node (Option (Local Node Msg NodeState))
-      (fun _ _ => True) where
+/-- A global configuration of a run: an observed configuration whose value for each validator is
+    its local state.
+
+    Read aloud: every validator's local state, known or not, its clock reading, its view, every
+    envelope ever put on the wire, the corrupted validators and the crashed ones. -/
+abbrev Config (Node Msg NodeState : Type) := ObservedConfig Node Msg (Local Node Msg NodeState)
+
+/-- `c[p]` is `p`'s value, `some l` when it is known and `none` when it is unknown
+    (`ObservedConfig.nodes`); in a run's configuration, its local state. Indexing is total, hence
+    the trivial side-condition. -/
+instance {Node Msg V : Type} :
+    GetElem (ObservedConfig Node Msg V) Node (Option V) (fun _ _ => True) where
   getElem c p _ := c.nodes p
 
 /-- A node action: one of the three actions that run a reaction of the node, named without the
@@ -634,7 +644,7 @@ def NodeAction.prepare {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decida
 
     * A tick: no further condition. The tick reaction runs at `p`'s current clock reading. The step
       relation allows any number of ticks at one reading; which ticks a run must contain, and by
-      when, is a condition on executions (`TicksWithinR`,
+      when, is a condition on executions (`TicksWithin`,
       `RealStsMulticastMultisetLog.Spec.Conditions`).
     * A delivery of `e`: `e` is on the wire and names `p` among its recipients. Any sent envelope
       may be delivered to any of its recipients that is up and honest, at any real time; here,
@@ -716,7 +726,7 @@ def deliverSpec {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq M
     before or after it has come online, and `restart` only once the node's clock exists.
     `corrupt` empties the node's local state and its clock, and keeps its view. Every condition
     reads the configuration and nothing else: no time, which is the execution's
-    (`Execution.stamp`).
+    (`ObservedRun.stamp`).
 
     A delivery reads the recipients: `deliver p e` is enabled only when `e.recipients.Has p`.
     The recipients reach no view: `p` is delivered `e.toSignedMsg`.

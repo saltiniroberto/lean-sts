@@ -19,7 +19,7 @@ namespace Framework.RealStsMulticastMultisetLog
 
     `Config.clock p` is the node `p`'s reading (`none` before its clock exists, and from `p`'s
     corruption on), and it is what a protocol is handed. The real time is not measured in this:
-    it is a real number, the execution's `Execution.stamp`, read only by the conditions on
+    it is a real number, the execution's `ObservedRun.stamp`, read only by the conditions on
     executions. The clocks are digital; the steps that set them happen at real times.
 
     Slots are absent: a protocol that has them defines them over `Time`.

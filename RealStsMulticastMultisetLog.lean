@@ -11,7 +11,7 @@ public import RealStsMulticastMultisetLog.Spec.Conditions
 # A framework for message-passing distributed protocols — real time, multicast multiset log
 
 **The suggested flavour.** A configuration carries no time: each configuration of an execution is
-entered at a real time, the execution's `Execution.stamp`. Each node's clock is a natural-number
+entered at a real time, the execution's `ObservedRun.stamp`. Each node's clock is a natural-number
 reading moved only by an environment step of its own, `setClock`, which runs no protocol code and is
 taken at a node that is not corrupted, whether it is up or crashed; every other node event (a tick,
 a delivery, a protocol event, a restart) runs at the reading the clock holds. A validator's local

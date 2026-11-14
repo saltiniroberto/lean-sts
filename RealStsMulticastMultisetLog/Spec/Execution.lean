@@ -12,13 +12,15 @@ Liveness is a property of executions, not of reachable states, so a state-based 
 assumption here is a **predicate on executions** rather than a condition on `Step`: different
 models impose different ones over the same step relation.
 
-This page holds the framework's executions and the readings of an execution: `Execution`, its
-indexing, `Execution.InForce`, `Exec`, `Execution.Honest` and `Execution.Enabled`. The conditions
+This page holds the framework's observed runs and executions and their readings: `ObservedRun`, the
+sequence of configurations, actions and real times that every execution has; `Execution`, an observed run
+that starts initial and moves by the system's steps; their indexing, `ObservedRun.InForce`,
+`ObservedRun.Honest`, `Exec` and `Execution.Enabled`. The conditions
 on executions, which statements take as hypotheses, are on the page
 `RealStsMulticastMultisetLog.Spec.Conditions`; the framework assumes none of them.
 
 **Real time is the execution's.** An execution is a sequence of configurations and steps, each
-configuration entered at a real time, `Execution.stamp`. The configurations carry no time and the
+configuration entered at a real time, `ObservedRun.stamp`. The configurations carry no time and the
 step relation reads none (`RealStsMulticastMultisetLog.Spec.Protocol`): the real time enters only
 through the stamps, which the conditions on executions read. Several steps may share one stamp;
 their order in the sequence is then any order, so a delivery and a tick taken at one real time
@@ -31,8 +33,8 @@ exists, and `none` otherwise (no clock exists at the start, and a corruption emp
 validator's clock starts before it first comes online, since a restart needs it). The step that
 sets a reading, `setClock p t`, happens at a real time of its own, its stamp, and runs no protocol
 code; every other step of `p` reads the clock. How a reading relates to the real time at which it
-is set is a condition on executions (`ClockWithinSkewR`), so that a property carries only the
-clock discipline it needs. `ClockAdvancesWithinR`, another condition on executions, asks every
+is set is a condition on executions (`ClockWithinSkew`), so that a property carries only the
+clock discipline it needs. `ClockAdvancesWithin`, another condition on executions, asks every
 node's clock, once started at any reading, to come to every greater reading while the node is up
 and not corrupted; it asks nothing of the clock of a node crashed or not yet online, and does not
 ask a clock to start.
@@ -42,8 +44,11 @@ set_option autoImplicit false
 
 namespace Framework.RealStsMulticastMultisetLog
 
-/-- An infinite execution in real time: the configuration after each number of steps, the action
-    taken at each step, and the real time at which each configuration is entered.
+/-- An observed run in real time: the configuration after each number of steps, the action taken
+    at each step, and the real time at which each configuration is entered, with no step relation:
+    nothing ties a configuration to the next. Every execution is one (`Execution` extends it), its
+    configurations holding each node's local state; an observed run read off an execution holds, in
+    its configurations, what is read of each node's local state (`observe`).
 
     `stamp i` is the real time at which configuration `i` is entered. So `stamp 0` is the start of
     the run, and `stamp (i + 1)` is the real time of step `i`, the step from configuration `i` to
@@ -51,17 +56,15 @@ namespace Framework.RealStsMulticastMultisetLog
     starts at `0` (`init_stamp`). Several steps may share a stamp (`mono` is not strict): steps
     taken at one real time, in the order of the sequence.
 
-    Read aloud: a sequence of configurations, each entered at a real time, each transition one of
-    the system's steps; the real time of a step is the stamp of the configuration it enters.
-
     The labels are needed because fairness is a statement about which transitions occur (a tick is
     a transition of its own, and nothing in the step relation forces it to happen), and because
     the network's conditions on executions (`DeliveredBeforeActing`, `CatchUpAfterRestart`,
     `SyncedWithinBy`) speak of delivery steps: a restart keeps the view, and the view does not
-    tell a delivery after the restart from one before it. Occurrence read off the relation
-    (`Sys.Step a (cfg i) (cfg (i+1))`) would only say that an `a`-step explains the transition,
-    not that it is the one taken: two actions with the same effect would be indistinguishable. -/
-structure Execution {St Lbl : Type} (Sys : System St Lbl) where
+    tell a delivery after the restart from one before it.
+
+    Read aloud: a sequence of configurations, each entered at a real time, with the action of each
+    step; the real time never goes back, never stops, and starts at `0`. -/
+structure ObservedRun (St Lbl : Type) where
   /-- The configuration after `i` steps. -/
   cfg : Nat → St
   /-- The action taken at step `i`. -/
@@ -69,16 +72,33 @@ structure Execution {St Lbl : Type} (Sys : System St Lbl) where
   /-- The real time at which configuration `i` is entered; for `i ≥ 1`, the real time of step
       `i − 1`. -/
   stamp : Nat → ℝ
-  /-- It starts initial. -/
-  init : Sys.Init (cfg 0)
-  /-- Consecutive configurations are related by that action. -/
-  step : ∀ i, Sys.Step (lbl i) (cfg i) (cfg (i + 1))
   /-- Real time never goes back: each configuration is entered no earlier than the one before. -/
   mono : ∀ i, stamp i ≤ stamp (i + 1)
   /-- Real time never stops: every real time `r` is reached by some configuration's stamp. -/
   progress : ∀ r : ℝ, ∃ i, r ≤ stamp i
   /-- The run starts at real time `0`. -/
   init_stamp : stamp 0 = 0
+
+/-- An infinite execution in real time: an observed run (`ObservedRun`) that starts in an initial
+    configuration of the system and whose consecutive configurations are related by the step the
+    run labels them with. Its projection `toObservedRun` is the run with no step relation.
+
+    Occurrence read off the relation (`Sys.Step a (cfg i) (cfg (i+1))`) would only say that an
+    `a`-step explains the transition, not that it is the one taken: two actions with the same effect
+    would be indistinguishable; hence the labels of `ObservedRun`.
+
+    Read aloud: a sequence of configurations, each entered at a real time, each transition one of
+    the system's steps; the real time of a step is the stamp of the configuration it enters. -/
+structure Execution {St Lbl : Type} (Sys : System St Lbl) extends ObservedRun St Lbl where
+  /-- It starts initial. -/
+  init : Sys.Init (cfg 0)
+  /-- Consecutive configurations are related by that action. -/
+  step : ∀ i, Sys.Step (lbl i) (cfg i) (cfg (i + 1))
+
+/-- `y[i]` is the configuration after `i` steps of the observed run `y`. Indexing is total, so the
+    validity side-condition is trivial. -/
+instance {St Lbl : Type} : GetElem (ObservedRun St Lbl) Nat St (fun _ _ => True) where
+  getElem y i _ := y.cfg i
 
 /-- `x[i]` is the configuration after `i` steps. Indexing is total, so the validity side-condition
     is trivial. -/
@@ -95,8 +115,7 @@ instance {St Lbl : Type} {Sys : System St Lbl} :
     exactly one configuration is in force at `s` (from `mono`, `progress` and `init_stamp`).
 
     Read aloud: as the real time reaches `s`, `x[i]` is the configuration the run is in. -/
-def Execution.InForce {St Lbl : Type} {Sys : System St Lbl} (x : Execution Sys) (i : Nat)
-    (s : ℝ) : Prop :=
+def ObservedRun.InForce {St Lbl : Type} (x : ObservedRun St Lbl) (i : Nat) (s : ℝ) : Prop :=
   x.stamp i < s ∧ s ≤ x.stamp (i + 1)
 
 /-- Executions of a protocol. The environment's corruptions and crashes are in the
@@ -125,8 +144,8 @@ need it take it as a parameter. -/
     relative to the step.
 
     Read aloud: `p` is outside the corrupted set of configuration `i`. -/
-def Execution.Honest {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (i : Nat) (p : Node) : Prop :=
+def ObservedRun.Honest {Node Msg V Lbl : Type} (x : ObservedRun (ObservedConfig Node Msg V) Lbl)
+    (i : Nat) (p : Node) : Prop :=
   p ∉ x[i].adv
 
 
