@@ -32,38 +32,30 @@ a paper assumes.
   `AsyncPeriodEndsInTime`. What they read of the protocol is passed as a parameter, of the types
   of `RealStsMulticastMultisetLog.Spec.ValidatorSets`.
 
-## Each definition is written once, over any observable execution
+## Each definition is written once, on observed runs
 
 Each definition here that reads an execution, except `WeakFair` and `StrongFair` (which read
-`Execution.Enabled`, the step relation's enabling condition), is written once, over any type of
-execution with an `Observable` (`RealStsMulticastMultisetLog.Spec.Observable`: the actions, the
-stamps, and in each configuration the clocks, the nodes' states, the views, the sent envelopes, the
-corrupted set and the crashed set). That definition takes the name without the trailing `R` where
-the name has one (`ClockAdvancesWithin` for `ClockAdvancesWithinR`), and the suffix `G` otherwise
-(`DueByG` for `DueBy`, `ActingStepG` for `Execution.ActingStep`), and sits just before the name
-over `Exec Pr`, which is defined as it at the run. A theorem `…_iff`
-(`RealStsMulticastMultisetLog.Analysis.Observable`) states each, by `Iff.rfl`.
+`Execution.Enabled`, the step relation's enabling condition), is written once, on observed runs
+(`ObservedRun`, `RealStsMulticastMultisetLog.Spec.Observable`: the actions, the stamps, and in each
+configuration the clocks, the nodes' values, the views, the sent envelopes, the corrupted set and the
+crashed set). That definition takes the name without the trailing `R` where the name has one
+(`ClockAdvancesWithin` for `ClockAdvancesWithinR`), and the suffix `G` otherwise (`DueByG` for
+`DueBy`, `ActingStepG` for `Execution.ActingStep`), and sits just before the name over `Exec Pr`,
+which is defined as it at the run's observation `observe id x` (each node's value being its local
+state).
 
-On a run the class's readings are the run's own: `lbl x j` is `x.lbl j`, `stamp x i` is
-`x.stamp i`, `clock x i p` is `x[i].clock p`, `state x i p` is `x[i][p]`, `view x i p` is
-`x[i].view p`, and `sent x i`, `adv x i` and `crashed x i` are `x[i].sent`, `x[i].adv` and
-`x[i].crashed`. So the docstring of a name over `Exec Pr` reads the formula over the run's own
-readings. A hypothesis taken apart shows the class's readings (`Observable.stamp x i` for
-`x.stamp i`); the simp set `observable_exec` (`RealStsMulticastMultisetLog.Analysis.Observable`)
-rewrites them to the run's own.
+On the observation of a run the readings are the run's own: `lbl y j` is `x.lbl j`, `stamp y i` is
+`x.stamp i`, `clock y i p` is `x[i].clock p`, `state y i p` is `x[i][p]`, `view y i p` is
+`x[i].view p`, and `sent y i`, `adv y i` and `crashed y i` are `x[i].sent`, `x[i].adv` and
+`x[i].crashed`, where `y = observe id x`.
 
 The one exception is the structure `WeightBounds`, which keeps its own fields beside the structure
-`WeightBoundsG`, and whose theorem goes field by field. A parameter that reads a node's state
-(`serves`, the members of a committee) reads, in the definition over the class, the state of type
-`L` the execution records; at a run that is the local state `l`, and the name over `Exec Pr` passes
-the reading of its memory state `l.st` (for a committee, `CommitteeSpec.comap (fun l => l.st)`).
-The committees themselves are read through the class `ObservableWithCommittees`, which extends
-`Observable` with an execution's committees; a run, which carries no committees, is read with given
-committees through `ObservableWithCommittees.ofCommittees`. The blocks of a node's tree are read
-through the class `BlockTree` on the state of type `L`; at a run, the instance on `Local` reads the
-tree of the memory state `l.st`. The validator set at a block is read through the class
-`BlockRegistry` on the block type. Who a message's object is attributed to, and which objects a
-message includes, are read through the class `MessageAuthorship` on the message type.
+`WeightBoundsG`. What a condition reads of the protocol is a parameter of it: a reading of a node's
+value (`serves`, the members of a committee, `tree`, the blocks in a node's tree), the committees
+(`committees ci`, the specification of committee `ci`), the validator set at a block (`registry`),
+who a message's object is attributed to and which objects a message includes (`author`, `carries`).
+On a run's observation a node's value is its local state `l`, and the name over `Exec Pr` passes the
+reading of its memory state `l.st` (for a committee, `CommitteeSpec.comap (fun l => l.st)`).
 
 ## Crashes, cut networks, corrupted validators
 
@@ -85,7 +77,7 @@ set_option autoImplicit false
 
 namespace Framework.RealStsMulticastMultisetLog
 
-open Observable
+open ObservedRun
 
 /-! ### The environment
 
@@ -95,11 +87,11 @@ real-time window states a condition of its own on the configurations in force du
 (`Execution.InForce`), for example that the node is outside `crashed` and its local state is known
 in each. -/
 
-/-- `NoCrashDuring` over any execution with an `Observable`. A condition on executions.
+/-- `NoCrashDuring` on an observed run. A condition on executions.
 
     Read aloud: no step of `x` is labelled `crashDuring`. -/
-def NoCrashDuringG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) : Prop :=
+def NoCrashDuringG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (k : Nat) (p : Node) (a : NodeAction Node Msg Ev) (j : Nat), lbl x k ≠ .crashDuring p a j
 
 /-- No crash ever interrupts a reaction: no step of `x` is a `crashDuring`.
@@ -111,10 +103,10 @@ def NoCrashDuringG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     Read aloud: no step of `x` is labelled `crashDuring`.
 
-    Defined as `NoCrashDuringG` at the run `x` (`noCrashDuring_iff`). -/
+    Defined as `NoCrashDuringG` at the observation of the run `x` (`noCrashDuring_iff`). -/
 def NoCrashDuring {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
-  NoCrashDuringG x
+  NoCrashDuringG (observe id x)
 
 /-! ### Clocks and real time
 
@@ -140,12 +132,12 @@ then in one of these classes, weakest first:
   `TicksWithinR ΔClockBehind` (their conjunction is `DiligentWithinR`). That the real
   time does not stop is the field `Execution.progress`, not a condition. -/
 
-/-- `ClockWithinSkewR` over any execution with an `Observable`. A condition on executions.
+/-- `ClockWithinSkewR` on an observed run. A condition on executions.
 
     Read aloud: every node's clock comes to read each reading `t` at a real time no earlier than
     `t − ΔClockAhead` and no later than `t + ΔClockBehind`. -/
-def ClockWithinSkew {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockAhead ΔClockBehind : ℝ) (x : X) : Prop :=
+def ClockWithinSkew {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockAhead ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (i : Nat) (p : Node) (t : Time), lbl x i = .setClock p t →
     (t : ℝ) - ΔClockAhead ≤ stamp x (i + 1) ∧ stamp x (i + 1) ≤ t + ΔClockBehind
 
@@ -168,17 +160,17 @@ def ClockWithinSkew {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     Read aloud: every node's clock comes to read each reading `t` at a real time no earlier than
     `t − ΔClockAhead` and no later than `t + ΔClockBehind`.
 
-    Defined as `ClockWithinSkew` at the run `x` (`clockWithinSkewR_iff`). -/
+    Defined as `ClockWithinSkew` at the observation of the run `x` (`clockWithinSkewR_iff`). -/
 def ClockWithinSkewR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  ClockWithinSkew ΔClockAhead ΔClockBehind x
+  ClockWithinSkew ΔClockAhead ΔClockBehind (observe id x)
 
-/-- `ClockNotAheadR` over any execution with an `Observable`. A condition on executions.
+/-- `ClockNotAheadR` on an observed run. A condition on executions.
 
     Read aloud: no node's clock comes to read `t` before the real time reaches `t`, and each comes
     to read it at most `ΔClockBehind` after. -/
-abbrev ClockNotAhead {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockBehind : ℝ) (x : X) : Prop :=
+abbrev ClockNotAhead {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ClockWithinSkew 0 ΔClockBehind x
 
 /-- No clock runs ahead: `ClockWithinSkewR` with `ΔClockAhead = 0`, every change of a clock to `t`
@@ -188,16 +180,16 @@ abbrev ClockNotAhead {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Ms
     Read aloud: no node's clock comes to read `t` before the real time reaches `t`, and each comes
     to read it at most `ΔClockBehind` after.
 
-    Defined as `ClockNotAhead` at the run `x` (`clockNotAheadR_iff`). -/
+    Defined as `ClockNotAhead` at the observation of the run `x` (`clockNotAheadR_iff`). -/
 abbrev ClockNotAheadR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  ClockNotAhead ΔClockBehind x
+  ClockNotAhead ΔClockBehind (observe id x)
 
-/-- `ClockAtTimeR` over any execution with an `Observable`. A condition on executions.
+/-- `ClockAtTimeR` on an observed run. A condition on executions.
 
     Read aloud: every node's clock comes to read each reading `t` at the real time `t`. -/
-abbrev ClockAtTime {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) : Prop :=
+abbrev ClockAtTime {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) : Prop :=
   ClockWithinSkew 0 0 x
 
 /-- One shared clock: `ClockWithinSkewR` with `ΔClockAhead = ΔClockBehind = 0`, every change of a
@@ -206,10 +198,10 @@ abbrev ClockAtTime {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     Read aloud: every node's clock comes to read each reading `t` at the real time `t`.
 
-    Defined as `ClockAtTime` at the run `x` (`clockAtTimeR_iff`). -/
+    Defined as `ClockAtTime` at the observation of the run `x` (`clockAtTimeR_iff`). -/
 abbrev ClockAtTimeR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
-  ClockAtTime x
+  ClockAtTime (observe id x)
 
 /-! ### Fairness
 
@@ -240,7 +232,7 @@ def StrongFair {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Ms
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (a : Action Node Msg Ev) : Prop :=
   (∀ i : Nat, ∃ j, i ≤ j ∧ x.Enabled j a) → ∀ i : Nat, ∃ j, i ≤ j ∧ x.lbl j = a
 
-/-- `ClockAdvancesWithinR` over any execution with an `Observable`. A condition on executions.
+/-- `ClockAdvancesWithinR` on an observed run. A condition on executions.
 
     Read aloud: whenever a node `p` is up (not crashed, with its local state known) and not
     corrupted, and its clock reads less than a reading `t`, either `p`'s clock comes to read `t`, or
@@ -253,8 +245,8 @@ def StrongFair {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Ms
     (`clockAdvancesWithin_bounded`, `RealStsMulticastMultisetLog.Analysis.Observable`, gives the
     bounded case back). So the formula does not read `ΔClockAhead`; the parameter matches
     `ClockWithinSkewR`'s. -/
-def ClockAdvancesWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockAhead ΔClockBehind : ℝ) (x : X) : Prop :=
+def ClockAdvancesWithin {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockAhead ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (t : Time) (p : Node) (i : Nat) (t' : Time),
     p ∉ crashed x i → state x i p ≠ none → p ∉ adv x i → clock x i p = some t' → t' < t →
       (∃ j : Nat, lbl x j = .setClock p t) ∨
@@ -364,18 +356,18 @@ def ClockAdvancesWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
     `p` crashes or is corrupted afterwards, by the real time `t + ΔClockBehind`. The clock of a node
     crashed or not yet online is not read, and a clock that never starts is asked nothing.
 
-    Defined as `ClockAdvancesWithin` at the run `x` (`clockAdvancesWithinR_iff`). -/
+    Defined as `ClockAdvancesWithin` at the observation of the run `x` (`clockAdvancesWithinR_iff`). -/
 def ClockAdvancesWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  ClockAdvancesWithin ΔClockAhead ΔClockBehind x
+  ClockAdvancesWithin ΔClockAhead ΔClockBehind (observe id x)
 
-/-- `TicksWithinR` over any execution with an `Observable`. A condition on executions.
+/-- `TicksWithinR` on an observed run. A condition on executions.
 
     Read aloud: whenever a node `p`'s clock comes to read `t` while `p` is up and honest, `p` takes
     its timer interrupt at the reading `t` by the real time `t + ΔClockBehind`, unless it is
     corrupted or crashes first. -/
-def TicksWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockBehind : ℝ) (x : X) : Prop :=
+def TicksWithin {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (i : Nat) (p : Node) (t : Time), lbl x i = .setClock p t →
     p ∉ crashed x i → p ∉ adv x i → state x i p ≠ none →
       ∃ j : Nat, i < j ∧ clock x j p = some t ∧ stamp x (j + 1) ≤ t + ΔClockBehind ∧
@@ -450,17 +442,17 @@ def TicksWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     its timer interrupt at the reading `t` by the real time `t + ΔClockBehind`, unless it is
     corrupted or crashes first.
 
-    Defined as `TicksWithin` at the run `x` (`ticksWithinR_iff`). -/
+    Defined as `TicksWithin` at the observation of the run `x` (`ticksWithinR_iff`). -/
 def TicksWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  TicksWithin ΔClockBehind x
+  TicksWithin ΔClockBehind (observe id x)
 
-/-- `ActsWithinSkew` over any execution with an `Observable`. A condition on executions.
+/-- `ActsWithinSkew` on an observed run. A condition on executions.
 
     Read aloud: every tick and every restart a node takes while its clock reads `t` is at a real
     time at most `t + ΔClockBehind`. -/
-def ActsWithinSkewG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockBehind : ℝ) (x : X) : Prop :=
+def ActsWithinSkewG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (i : Nat) (p : Node) (t : Time), (lbl x i = .tick p ∨ ∃ keep : Bool, lbl x i = .restart p keep) →
     clock x i p = some t → stamp x (i + 1) ≤ t + ΔClockBehind
 
@@ -508,17 +500,17 @@ def ActsWithinSkewG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     Read aloud: every tick and every restart a node takes while its clock reads `t` is at a real
     time at most `t + ΔClockBehind`.
 
-    Defined as `ActsWithinSkewG` at the run `x` (`actsWithinSkew_iff`). -/
+    Defined as `ActsWithinSkewG` at the observation of the run `x` (`actsWithinSkew_iff`). -/
 def ActsWithinSkew {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  ActsWithinSkewG ΔClockBehind x
+  ActsWithinSkewG ΔClockBehind (observe id x)
 
-/-- `DiligentWithinR` over any execution with an `Observable`. A condition on executions.
+/-- `DiligentWithinR` on an observed run. A condition on executions.
 
     Read aloud: both the clock condition `ClockAdvancesWithinR` and the tick condition
     `TicksWithinR` hold. -/
-abbrev DiligentWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (ΔClockAhead ΔClockBehind : ℝ) (x : X) : Prop :=
+abbrev DiligentWithin {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (ΔClockAhead ΔClockBehind : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ClockAdvancesWithin ΔClockAhead ΔClockBehind x ∧ TicksWithin ΔClockBehind x
 
 /-- A condition on executions, which a statement takes as a hypothesis. It is both
@@ -550,10 +542,10 @@ abbrev DiligentWithin {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
     Read aloud: both the clock condition `ClockAdvancesWithinR` and the tick condition
     `TicksWithinR` hold.
 
-    Defined as `DiligentWithin` at the run `x` (`diligentWithinR_iff`). -/
+    Defined as `DiligentWithin` at the observation of the run `x` (`diligentWithinR_iff`). -/
 abbrev DiligentWithinR {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (ΔClockAhead ΔClockBehind : ℝ) (x : Exec Pr) : Prop :=
-  DiligentWithin ΔClockAhead ΔClockBehind x
+  DiligentWithin ΔClockAhead ΔClockBehind (observe id x)
 
 /-! ### Network
 
@@ -589,12 +581,12 @@ Every sent envelope is covered by `DeliveredBeforeActing` and `CatchUpAfterResta
 which some envelopes are owed nothing (a message gossiped only during a window of its own, say)
 adds a filter as a hypothesis of the two. -/
 
-/-- `Execution.ActingStep` over any execution with an `Observable`. A reading of executions.
+/-- `Execution.ActingStep` on an observed run. A reading of executions.
 
     Read aloud: at step `k`, `p` ticks, reacts to a protocol event, or crashes during one of the
     two. -/
-def ActingStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) (k : Nat) (p : Node) : Prop :=
+def ActingStepG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (k : Nat) (p : Node) : Prop :=
   lbl x k = .tick p ∨ (∃ ev : Ev, lbl x k = .custom p ev) ∨
     (∃ n : Nat, lbl x k = .crashDuring p .tick n) ∨
     (∃ (ev : Ev) (n : Nat), lbl x k = .crashDuring p (.custom ev) n)
@@ -611,16 +603,16 @@ def ActingStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: at step `k`, `p` ticks, reacts to a protocol event, or crashes during one of the
     two.
 
-    Defined as `ActingStepG` at the run `x` (`Execution.actingStep_iff`). -/
+    Defined as `ActingStepG` at the observation of the run `x` (`Execution.actingStep_iff`). -/
 def Execution.ActingStep {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (k : Nat) (p : Node) : Prop :=
-  ActingStepG x k p
+  ActingStepG (observe id x) k p
 
-/-- `TickStep` over any execution with an `Observable`. A reading of executions.
+/-- `TickStep` on an observed run. A reading of executions.
 
     Read aloud: at step `k`, `p` ticks. -/
-def TickStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) (k : Nat) (p : Node) : Prop :=
+def TickStepG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (k : Nat) (p : Node) : Prop :=
   lbl x k = .tick p
 
 /-- Step `k` of `x` is `p`'s timer interrupt, a completed `tick p`. A reading of an execution that
@@ -634,17 +626,17 @@ def TickStepG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     Read aloud: at step `k`, `p` ticks.
 
-    Defined as `TickStepG` at the run `x` (`tickStep_iff`). -/
+    Defined as `TickStepG` at the observation of the run `x` (`tickStep_iff`). -/
 def TickStep {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (k : Nat) (p : Node) : Prop :=
-  TickStepG x k p
+  TickStepG (observe id x) k p
 
-/-- `Execution.UpBetween` over any execution with an `Observable`. A reading of executions.
+/-- `Execution.UpBetween` on an observed run. A reading of executions.
 
     Read aloud: in every configuration from `i` to `k`, `p` has come online, is not crashed, and is
     not corrupted. -/
-def UpBetweenG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) (i k : Nat) (p : Node) : Prop :=
+def UpBetweenG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (i k : Nat) (p : Node) : Prop :=
   ∀ l : Nat, i ≤ l → l ≤ k → p ∉ crashed x l ∧ state x l p ≠ none
 
 /-- `p` is up in every configuration from `i` to `k`: outside the crashed set, with its local state
@@ -658,18 +650,18 @@ def UpBetweenG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     Read aloud: in every configuration from `i` to `k`, `p` has come online, is not crashed, and is
     not corrupted.
 
-    Defined as `UpBetweenG` at the run `x` (`Execution.upBetween_iff`). -/
+    Defined as `UpBetweenG` at the observation of the run `x` (`Execution.upBetween_iff`). -/
 def Execution.UpBetween {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (i k : Nat) (p : Node) : Prop :=
-  UpBetweenG x i k p
+  UpBetweenG (observe id x) i k p
 
-/-- `Execution.UpAndHonestThroughout` over any execution with an `Observable`. A condition on
+/-- `Execution.UpAndHonestThroughout` on an observed run. A condition on
     executions.
 
     Read aloud: from the real time `t` to the real time `t'`, `p` is never crashed, never corrupted,
     and has come online. -/
-def UpAndHonestThroughoutG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) (t t' : ℝ) (p : Node) : Prop :=
+def UpAndHonestThroughoutG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (t t' : ℝ) (p : Node) : Prop :=
   ∀ i : Nat, t ≤ stamp x (i + 1) → stamp x i ≤ t' →
     p ∉ crashed x i ∧ state x i p ≠ none ∧ HonestG x i p
 
@@ -687,19 +679,19 @@ def UpAndHonestThroughoutG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     Read aloud: from the real time `t` to the real time `t'`, `p` is never crashed, never corrupted,
     and has come online.
 
-    Defined as `UpAndHonestThroughoutG` at the run `x` (`Execution.upAndHonestThroughout_iff`). -/
+    Defined as `UpAndHonestThroughoutG` at the observation of the run `x` (`Execution.upAndHonestThroughout_iff`). -/
 def Execution.UpAndHonestThroughout {Node Msg NodeState Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) (t t' : ℝ) (p : Node) :
     Prop :=
-  UpAndHonestThroughoutG x t t' p
+  UpAndHonestThroughoutG (observe id x) t t' p
 
-/-- `Execution.UpAndHonestUntilActing` over any execution with an `Observable`. A reading of
+/-- `Execution.UpAndHonestUntilActing` on an observed run. A reading of
     executions.
 
     Read aloud: from the real time `t` until it acts at or after the real time `t'`, `p` is never
     crashed, never corrupted, and has come online. -/
-def UpAndHonestUntilActingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (acting : X → Nat → Node → Prop) (x : X) (t t' : ℝ) (p : Node) :
+def UpAndHonestUntilActingG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (acting : ObservedRun Node Msg Ev L → Nat → Node → Prop) (x : ObservedRun Node Msg Ev L) (t t' : ℝ) (p : Node) :
     Prop :=
   ∀ i : Nat, t ≤ stamp x (i + 1) →
     (∀ k : Nat, acting x k p → t' ≤ stamp x (k + 1) → i ≤ k) →
@@ -721,11 +713,11 @@ def UpAndHonestUntilActingG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidab
     Read aloud: from the real time `t` until it acts at or after the real time `t'`, `p` is never
     crashed, never corrupted, and has come online.
 
-    Defined as `UpAndHonestUntilActingG` at the run `x` (`Execution.upAndHonestUntilActing_iff`). -/
+    Defined as `UpAndHonestUntilActingG` at the observation of the run `x` (`Execution.upAndHonestUntilActing_iff`). -/
 def Execution.UpAndHonestUntilActing {Node Msg NodeState Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
+    [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (acting : ObservedRun Node Msg Ev (Local Node Msg NodeState) → Nat → Node → Prop)
     (x : Exec Pr) (t t' : ℝ) (p : Node) : Prop :=
-  UpAndHonestUntilActingG acting x t t' p
+  UpAndHonestUntilActingG acting (observe id x) t t' p
 
 /-- The deadline of a network synchronous from `tGST` on: `ΔDelay m` after the later of `t` and
     `tGST`, for a message `m` and the real time `t` the deadline counts from (a sending, a restart,
@@ -747,11 +739,11 @@ noncomputable def deadlineOutside {Msg : Type} (tGST : ℝ) (ΔDelay : (m : Msg)
   if max t tGST + ΔDelay m ≤ tAsyncStart then max t tGST + ΔDelay m
   else max t (max tAsyncEnd tGST) + ΔDelay m
 
-/-- `DueBy` over any execution with an `Observable`. A reading of executions.
+/-- `DueBy` on an observed run. A reading of executions.
 
     Read aloud: `e` was sent at step `i`, and its deadline has passed by the real time `t`. -/
-def DueByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : X) (i : Nat)
+def DueByG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : ObservedRun Node Msg Ev L) (i : Nat)
     (e : Envelope Node Msg) (t : ℝ) : Prop :=
   e ∈ sent x (i + 1) - sent x i ∧ dl e.msg (stamp x (i + 1)) ≤ t
 
@@ -778,21 +770,21 @@ def DueByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     Read aloud: `e` was sent at step `i`, and its deadline has passed by the real time `t`.
 
-    Defined as `DueByG` at the run `x` (`dueBy_iff`). -/
+    Defined as `DueByG` at the observation of the run `x` (`dueBy_iff`). -/
 def DueBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : Exec Pr)
     (i : Nat) (e : Envelope Node Msg) (t : ℝ) : Prop :=
-  DueByG dl x i e t
+  DueByG dl (observe id x) i e t
 
-/-- `DeliveredBeforeActing` over any execution with an `Observable`. A condition on executions.
+/-- `DeliveredBeforeActing` on an observed run. A condition on executions.
 
     Read aloud: whenever an honest node acts at a step `acting` names, every envelope addressed to
     it that was sent while it was up, with the node up since, and whose deadline has passed, was
     delivered to it after that sending and before acting, with no memory-losing restart in
     between. -/
-def DeliveredBeforeActingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (acting : X → Nat → Node → Prop) (dl : (m : Msg) → (tSend : ℝ) → ℝ)
-    (x : X) : Prop :=
+def DeliveredBeforeActingG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (acting : ObservedRun Node Msg Ev L → Nat → Node → Prop) (dl : (m : Msg) → (tSend : ℝ) → ℝ)
+    (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (k : Nat) (p : Node), acting x k p →
     ∀ (i : Nat) (e : Envelope Node Msg), i < k → e.recipients.Has p → UpBetweenG x i k p →
       DueByG dl x i e (stamp x (k + 1)) →
@@ -871,21 +863,21 @@ def DeliveredBeforeActingG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     it that was sent while it was up, with the node up since, and whose deadline has passed, was
     delivered to it after that sending and before acting, with no memory-losing restart in between.
 
-    Defined as `DeliveredBeforeActingG` at the run `x` (`deliveredBeforeActing_iff`). -/
+    Defined as `DeliveredBeforeActingG` at the observation of the run `x` (`deliveredBeforeActing_iff`). -/
 def DeliveredBeforeActing {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
+    {Pr : Protocol Node Msg NodeState Ev} (acting : ObservedRun Node Msg Ev (Local Node Msg NodeState) → Nat → Node → Prop)
     (dl : (m : Msg) → (tSend : ℝ) → ℝ) (x : Exec Pr) : Prop :=
-  DeliveredBeforeActingG acting dl x
+  DeliveredBeforeActingG acting dl (observe id x)
 
-/-- `CatchUpAfterRestart` over any execution with an `Observable`. A condition on executions.
+/-- `CatchUpAfterRestart` on an observed run. A condition on executions.
 
     Read aloud: whenever an honest node acts at a step `acting` names, every envelope addressed to
     it that was sent before one of its restarts was delivered to it again after its last restart
     before acting, once both the deadline from the sending and the deadline from each of its
     restarts since have passed. -/
-def CatchUpAfterRestartG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (acting : X → Nat → Node → Prop) (dl : (m : Msg) → (tSend : ℝ) → ℝ)
-    (dlW : (m : Msg) → (tRestart : ℝ) → ℝ) (x : X) : Prop :=
+def CatchUpAfterRestartG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (acting : ObservedRun Node Msg Ev L → Nat → Node → Prop) (dl : (m : Msg) → (tSend : ℝ) → ℝ)
+    (dlW : (m : Msg) → (tRestart : ℝ) → ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (k : Nat) (p : Node), acting x k p →
     ∀ (i : Nat) (e : Envelope Node Msg), i < k → e.recipients.Has p →
       (∃ (l : Nat) (keep : Bool), i < l ∧ l < k ∧ lbl x l = .restart p keep) →
@@ -970,14 +962,14 @@ def CatchUpAfterRestartG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableE
     before acting, once both the deadline from the sending and the deadline from each of its
     restarts since have passed.
 
-    Defined as `CatchUpAfterRestartG` at the run `x` (`catchUpAfterRestart_iff`). -/
+    Defined as `CatchUpAfterRestartG` at the observation of the run `x` (`catchUpAfterRestart_iff`). -/
 def CatchUpAfterRestart {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
+    {Pr : Protocol Node Msg NodeState Ev} (acting : ObservedRun Node Msg Ev (Local Node Msg NodeState) → Nat → Node → Prop)
     (dl : (m : Msg) → (tSend : ℝ) → ℝ) (dlW : (m : Msg) → (tRestart : ℝ) → ℝ) (x : Exec Pr) :
     Prop :=
-  CatchUpAfterRestartG acting dl dlW x
+  CatchUpAfterRestartG acting dl dlW (observe id x)
 
-/-- `SyncedWithinBy` over any execution with an `Observable`. A condition on executions.
+/-- `SyncedWithinBy` on an observed run. A condition on executions.
 
     `serves` reads a node's state as the execution records it, of type `L` (on a run, its local
     state `l`, where `SyncedWithinBy` reads its memory state `l.st`).
@@ -987,9 +979,9 @@ def CatchUpAfterRestart {Node Msg NodeState Ev : Type} [DecidableEq Node] [Decid
     delivered by that deadline, before it acts at or after the deadline, at a step after which it
     stays up and honest until that acting step, and the delivery comes no earlier than a state in
     which the holder served it. -/
-def SyncedWithinByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (acting : X → Nat → Node → Prop)
-    (serves : (tClock : Time) → (l : L) → (m : Msg) → Prop) (sync : (m : Msg) → (t : ℝ) → ℝ) (x : X)
+def SyncedWithinByG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (acting : ObservedRun Node Msg Ev L → Nat → Node → Prop)
+    (serves : (tClock : Time) → (l : L) → (m : Msg) → Prop) (sync : (m : Msg) → (t : ℝ) → ℝ) (x : ObservedRun Node Msg Ev L)
     : Prop :=
   ∀ (t : ℝ) (i : Nat) (p p' : Node) (m : Msg) (tClock : Time) (l : L),
     InForceG x i t → p ∉ crashed x i → HonestG x i p → state x i p = some l →
@@ -1094,23 +1086,23 @@ def SyncedWithinByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
     stays up and honest until that acting step, and the delivery comes no earlier than a state in
     which the holder served it.
 
-    Defined as `SyncedWithinByG` at the run `x` (`syncedWithinBy_iff`). -/
+    Defined as `SyncedWithinByG` at the observation of the run `x` (`syncedWithinBy_iff`). -/
 def SyncedWithinBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} (acting : Exec Pr → Nat → Node → Prop)
+    {Pr : Protocol Node Msg NodeState Ev} (acting : ObservedRun Node Msg Ev (Local Node Msg NodeState) → Nat → Node → Prop)
     (serves : (tClock : Time) → (st : NodeState) → (m : Msg) → Prop)
     (sync : (m : Msg) → (t : ℝ) → ℝ) (x : Exec Pr) : Prop :=
-  SyncedWithinByG acting (fun tClock l m => serves tClock l.st m) sync x
+  SyncedWithinByG acting (fun tClock l m => serves tClock l.st m) sync (observe id x)
 
 /-! ### Ticks and the adversary's sends
 
 Two conditions on executions: `TickOncePerReading`, at most one tick of a node at each reading of
 its clock, and `UnforgeableSends`, the adversary's half of unforgeability. -/
 
-/-- `TickOncePerReading` over any execution with an `Observable`. A condition on executions.
+/-- `TickOncePerReading` on an observed run. A condition on executions.
 
     Read aloud: a node ticks at most once while its clock shows any one reading. -/
-def TickOncePerReadingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) : Prop :=
+def TickOncePerReadingG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (i j : Nat) (p : Node) (t : Time), lbl x i = .tick p → clock x i p = some t →
     lbl x j = .tick p → clock x j p = some t → i = j
 
@@ -1139,39 +1131,28 @@ def TickOncePerReadingG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
 
     Read aloud: a node ticks at most once while its clock shows any one reading.
 
-    Defined as `TickOncePerReadingG` at the run `x` (`tickOncePerReading_iff`). -/
+    Defined as `TickOncePerReadingG` at the observation of the run `x` (`tickOncePerReading_iff`). -/
 def TickOncePerReading {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr) : Prop :=
-  TickOncePerReadingG x
+  TickOncePerReadingG (observe id x)
 
-/-- Who the object of a message of type `Msg` is attributed to, and which objects a message
-    includes. A reading of messages, not part of the bare framework: no step reads it, and the
-    condition on executions `UnforgeableSendsG` reads a message's author and inclusions through it.
-
-    Read aloud: the object of the message `m` is attributed to `MessageAuthorship.author m`, and `m`
-    includes the object of `m'` when `MessageAuthorship.carries m m'`. -/
-class MessageAuthorship (Msg : Type) (Node : outParam Type) where
-  /-- `author m`: the validator the object of the message `m` is attributed to, if any. -/
-  author : (m : Msg) → Option Node
-  /-- `carries m m'`: the object of the message `m` includes the object of the message `m'`. -/
-  carries : (m : Msg) → (m' : Msg) → Prop
-
-/-- `UnforgeableSends` over any execution with an `Observable`. A condition on executions. Who an
-    object is attributed to, and which objects a message includes, are read through the class
-    `MessageAuthorship` on the message type.
+/-- `UnforgeableSends` on an observed run. A condition on executions. `author m` is the validator
+    the object of the message `m` is attributed to, if any; `carries m m'` says that the object of
+    `m` includes the object of `m'`.
 
     Read aloud: the adversary sends no honest validator's object that was not already sent. -/
-def UnforgeableSendsG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] [MessageAuthorship Msg Node] (x : X) : Prop :=
+def UnforgeableSendsG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (author : (m : Msg) → Option Node) (carries : (m : Msg) → (m' : Msg) → Prop)
+    (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ (i : Nat) (e : Envelope Node Msg), (∀ p : Node, lbl x i ≠ .tick p) →
     (∀ (p : Node) (e' : Envelope Node Msg), lbl x i ≠ .deliver p e') →
     e ∈ sent x (i + 1) - sent x i →
     (∃ e' ∈ sent x i, e'.toSignedMsg = e.toSignedMsg) ∨
       (e.sender ∈ adv x i ∧
         ∀ (mObject : Msg) (v : Node),
-          (mObject = e.msg ∨ MessageAuthorship.carries e.msg mObject) →
-          MessageAuthorship.author mObject = some v → HonestG x i v →
-          ∃ e' ∈ sent x i, e'.msg = mObject ∨ MessageAuthorship.carries e'.msg mObject)
+          (mObject = e.msg ∨ carries e.msg mObject) →
+          author mObject = some v → HonestG x i v →
+          ∃ e' ∈ sent x i, e'.msg = mObject ∨ carries e'.msg mObject)
 
 /-- A condition on executions, which a statement takes as a hypothesis. At every step that is
     neither a tick nor a delivery, each envelope put on the wire is a copy of a signed message
@@ -1218,13 +1199,11 @@ def UnforgeableSendsG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq M
 
     Read aloud: the adversary sends no honest validator's object that was not already sent.
 
-    Defined as `UnforgeableSendsG` at the run `x`, with the class `MessageAuthorship` read as
-    `author` and `carries` (`unforgeableSends_iff`). -/
+    Defined as `UnforgeableSendsG` at the observation of the run `x`. -/
 def UnforgeableSends {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (author : (m : Msg) → Option Node)
     (carries : (m : Msg) → (m' : Msg) → Prop) (x : Exec Pr) : Prop :=
-  letI : MessageAuthorship Msg Node := ⟨author, carries⟩
-  UnforgeableSendsG x
+  UnforgeableSendsG author carries (observe id x)
 
 /-! ### The asynchronous period, the adversary's weight, the healing phase, the committees and the proposers
 
@@ -1254,40 +1233,14 @@ def AffectedByAsync {Node NodeInfo : Type} (committee : CommitteeSpec Node NodeI
     (tAsyncStart tAsyncEnd ΔRecovery : ℝ) : Prop :=
   tAsyncStart < committee.tSyncNeededUntil ∧ committee.tSyncNeededUntil < tAsyncEnd + ΔRecovery
 
-/-- The blocks in the tree of a node whose state, as an execution records it, has type `L`. A
-    reading of an execution's state, not part of the bare framework: no step reads it, and the
-    conditions on executions `InHonestTreeByG` and `WeightBoundsG` read a node's blocks through it.
-
-    Read aloud: a node whose state is `l` has the blocks `BlockTree.tree l` in its tree. -/
-class BlockTree (L : Type) (Block : outParam Type) where
-  /-- `tree l`: the blocks in the tree of a node whose state is `l`. -/
-  tree : (l : L) → Finset Block
-
-/-- A run's local state `l` has the tree of its memory state, `BlockTree.tree l.st`.
-
-    Read aloud: a node's tree in a run is the tree of its memory state. -/
-instance {Node Msg NodeState Block : Type} [BlockTree NodeState Block] :
-    BlockTree (Local Node Msg NodeState) Block :=
-  ⟨fun l => BlockTree.tree l.st⟩
-
-/-- The validator set at each block of type `Block`. A reading of a block, not part of the bare
-    framework: no step reads it, and the condition on executions `WeightBoundsG` reads a block's
-    validator set through it.
-
-    Read aloud: at the block `B`, the validators, their weights and the quorum are
-    `BlockRegistry.registry B`. -/
-class BlockRegistry (Block : Type) (Node : outParam Type) where
-  /-- `registry B`: the validator set at the block `B`. -/
-  registry : (B : Block) → Registry Node
-
-/-- `Execution.InHonestTreeBy` over any execution with an `Observable` whose node states have a
-    `BlockTree`. A reading of executions.
+/-- `Execution.InHonestTreeBy` on an observed run, `tree l` being the blocks in the tree of a node
+    whose value is `l`. A reading of executions.
 
     Read aloud: by the real time `tBy`, some honest node has `B` in its tree. -/
-def InHonestTreeByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] [BlockTree L Block] (x : X) (tBy : ℝ) (B : Block) : Prop :=
+def InHonestTreeByG {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (tree : (l : L) → Finset Block) (tBy : ℝ) (B : Block) : Prop :=
   ∃ (i : Nat) (v : Node) (l : L),
-    state x i v = some l ∧ HonestG x i v ∧ stamp x i ≤ tBy ∧ B ∈ BlockTree.tree l
+    state x i v = some l ∧ HonestG x i v ∧ stamp x i ≤ tBy ∧ B ∈ tree l
 
 /-- An honest node holds `B` in some configuration of `x` entered at `tBy` or earlier: the node's
     local state is known there, the node is honest there, and `B` is among the blocks `held` reads
@@ -1296,19 +1249,18 @@ def InHonestTreeByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [Decidable
 
     Read aloud: by the real time `tBy`, some honest node has `B` among its held blocks.
 
-    Defined as `InHonestTreeByG` at the run `x`, with the tree of a local state `l` read as
-    `held l.st` (`Execution.inHonestTreeBy_iff`). -/
+    Defined as `InHonestTreeByG` at the observation of the run `x`, with the tree of a local state
+    `l` read as `held l.st`. -/
 def Execution.InHonestTreeBy {Node Msg NodeState Ev Block : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (held : (st : NodeState) → Finset Block) (tBy : ℝ) (B : Block) : Prop :=
-  letI : BlockTree (Local Node Msg NodeState) Block := ⟨fun l => held l.st⟩
-  InHonestTreeByG x tBy B
+  InHonestTreeByG (observe id x) (fun l => held l.st) tBy B
 
-/-- `Execution.HonestSentBy` over any execution with an `Observable`. A reading of executions.
+/-- `Execution.HonestSentBy` on an observed run. A reading of executions.
 
     Read aloud: by the real time `tBy`, some honest node has sent `B`. -/
-def HonestSentByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (x : X) (blockOf : (m : Msg) → Option Block) (tBy : ℝ) (B : Block)
+def HonestSentByG {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
+    (x : ObservedRun Node Msg Ev L) (blockOf : (m : Msg) → Option Block) (tBy : ℝ) (B : Block)
     : Prop :=
   ∃ (i : Nat) (e : Envelope Node Msg),
     e ∈ sent x (i + 1) - sent x i ∧ HonestG x i e.sender ∧ stamp x (i + 1) ≤ tBy ∧
@@ -1322,19 +1274,19 @@ def HonestSentByG {X Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq
 
     Read aloud: by the real time `tBy`, some honest node has sent `B`.
 
-    Defined as `HonestSentByG` at the run `x` (`Execution.honestSentBy_iff`). -/
+    Defined as `HonestSentByG` at the observation of the run `x` (`Execution.honestSentBy_iff`). -/
 def Execution.HonestSentBy {Node Msg NodeState Ev Block : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (blockOf : (m : Msg) → Option Block) (tBy : ℝ) (B : Block) : Prop :=
-  HonestSentByG x blockOf tBy B
+  HonestSentByG (observe id x) blockOf tBy B
 
-/-- `AdversaryUnderIntersectionBy` over any execution with an `Observable`. A condition on
+/-- `AdversaryUnderIntersectionBy` on an observed run. A condition on
     executions.
 
     Read aloud: up to `tBy`, the corrupted validators weigh less than what any two quorums must
     share. -/
-def AdversaryUnderIntersectionByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (reg reg' : Registry Node) (tBy : ℝ) (x : X) : Prop :=
+def AdversaryUnderIntersectionByG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (reg reg' : Registry Node) (tBy : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ i : Nat, stamp x i ≤ tBy → counted reg (adv x i) < guaranteed reg reg'
 
 /-- A condition on executions: in every configuration of `x` entered at `tBy` or earlier, the
@@ -1344,18 +1296,18 @@ def AdversaryUnderIntersectionByG {X Node Msg L Ev : Type} [DecidableEq Node] [D
     Read aloud: up to `tBy`, the corrupted validators weigh less than what any two quorums must
     share.
 
-    Defined as `AdversaryUnderIntersectionByG` at the run `x`
+    Defined as `AdversaryUnderIntersectionByG` at the observation of the run `x`
     (`adversaryUnderIntersectionBy_iff`). -/
 def AdversaryUnderIntersectionBy {Node Msg NodeState Ev : Type} [DecidableEq Node]
     [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (reg reg' : Registry Node) (tBy : ℝ)
     (x : Exec Pr) : Prop :=
-  AdversaryUnderIntersectionByG reg reg' tBy x
+  AdversaryUnderIntersectionByG reg reg' tBy (observe id x)
 
-/-- `AdversaryUnderQuorumBy` over any execution with an `Observable`. A condition on executions.
+/-- `AdversaryUnderQuorumBy` on an observed run. A condition on executions.
 
     Read aloud: up to `tBy`, the corrupted validators weigh less than a quorum. -/
-def AdversaryUnderQuorumByG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (reg : Registry Node) (tBy : ℝ) (x : X) : Prop :=
+def AdversaryUnderQuorumByG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (reg : Registry Node) (tBy : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   ∀ i : Nat, stamp x i ≤ tBy → counted reg (adv x i) < reg.quorum
 
 /-- A condition on executions: in every configuration of `x` entered at `tBy` or earlier, the
@@ -1363,42 +1315,33 @@ def AdversaryUnderQuorumByG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidab
 
     Read aloud: up to `tBy`, the corrupted validators weigh less than a quorum.
 
-    Defined as `AdversaryUnderQuorumByG` at the run `x` (`adversaryUnderQuorumBy_iff`). -/
+    Defined as `AdversaryUnderQuorumByG` at the observation of the run `x` (`adversaryUnderQuorumBy_iff`). -/
 def AdversaryUnderQuorumBy {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (reg : Registry Node) (tBy : ℝ) (x : Exec Pr) : Prop :=
-  AdversaryUnderQuorumByG reg tBy x
+  AdversaryUnderQuorumByG reg tBy (observe id x)
 
-/-- `WeightBounds` over any execution with an `Observable`. A condition on executions.
+/-- `WeightBounds` on an observed run. A condition on executions.
 
-    Its fields are those of `WeightBounds`, with each reading of a run read through the class. On a
-    run of a protocol whose memory states have a `BlockTree` it says what
-    `WeightBounds BlockTree.tree BlockRegistry.registry` says (`weightBounds_iff`, field by field).
-
-    The blocks of a node are read through the class `BlockTree` on the state of type `L` the
-    execution records (on a run, its local state `l`, whose tree is that of its memory state
-    `l.st`). A block's validator set is read through the class `BlockRegistry` on the block type. -/
-structure WeightBoundsG {X Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] [BlockTree L Block] [BlockRegistry Block Node]
-    (tAwakeEnd : ℝ) (x : X) : Prop where
+    Its fields are those of `WeightBounds`, read on the observed run: `tree l` is the blocks in the
+    tree of a node whose value is `l`, and `registry B` is the validator set at the block `B`. -/
+structure WeightBoundsG {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
+    (tree : (l : L) → Finset Block) (registry : (B : Block) → Registry Node)
+    (tAwakeEnd : ℝ) (x : ObservedRun Node Msg Ev L) : Prop where
   /-- For every two blocks in honest nodes' trees by `tAwakeEnd`, the validators corrupted by then
   weigh, in the first block's validator set, less than what a quorum of each must share. -/
-  third : ∀ B B' : Block, InHonestTreeByG x tAwakeEnd B → InHonestTreeByG x tAwakeEnd B' →
-    AdversaryUnderIntersectionByG (BlockRegistry.registry B) (BlockRegistry.registry B') tAwakeEnd x
+  third : ∀ B B' : Block, InHonestTreeByG x tree tAwakeEnd B → InHonestTreeByG x tree tAwakeEnd B' →
+    AdversaryUnderIntersectionByG (registry B) (registry B') tAwakeEnd x
   /-- For every real time `t` and every block in an honest node's tree by `t`, the validators
   corrupted by `t` weigh less than that block's quorum. -/
-  quorum : ∀ (t : ℝ) (B : Block), InHonestTreeByG x t B →
-    AdversaryUnderQuorumByG (BlockRegistry.registry B) t x
+  quorum : ∀ (t : ℝ) (B : Block), InHonestTreeByG x tree t B →
+    AdversaryUnderQuorumByG (registry B) t x
 
 /-- A condition on executions: the two weight bounds, per block, in the block's validator set
     `registry B`, over the blocks honest nodes hold (`held st`, the blocks a node whose state is
     `st` holds).
 
-    The same condition over any execution with an `Observable` is `WeightBoundsG`, which reads a
-    node's blocks through the class `BlockTree` and a block's validator set through the class
-    `BlockRegistry`; on every run of a protocol whose memory states have a `BlockTree` and whose
-    blocks have a `BlockRegistry`, `WeightBounds BlockTree.tree BlockRegistry.registry` and
-    `WeightBoundsG` agree (`weightBounds_iff`, field by field,
-    `RealStsMulticastMultisetLog.Analysis.Observable`).
+    The same condition on an observed run is `WeightBoundsG`; `WeightBounds held registry x` and
+    `WeightBoundsG (fun l => held l.st) registry tAwakeEnd (observe id x)` agree field by field.
 
     `WeightBounds` keeps its own fields rather than being defined as `WeightBoundsG` at the run, so
     that it has the fields `WeightBounds.third` and `WeightBounds.quorum` and the constructor
@@ -1414,11 +1357,11 @@ structure WeightBounds {Node Msg NodeState Ev Block : Type} [DecidableEq Node] [
   `t` weigh less than that block's quorum. -/
   quorum : ∀ (t : ℝ) (B : Block), x.InHonestTreeBy held t B → AdversaryUnderQuorumBy (registry B) t x
 
-/-- `HealingPhase` over any execution with an `Observable`. A condition on executions.
+/-- `HealingPhase` on an observed run. A condition on executions.
 
     Read aloud: from `tGST` on, during the phase, every honest node is online and up. -/
-def HealingPhaseG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (tGST tGAT tAwakeEnd : ℝ) (x : X) : Prop :=
+def HealingPhaseG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (tGST tGAT tAwakeEnd : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
   tGST ≤ tGAT ∧ tGAT ≤ tAwakeEnd ∧
     ∀ (i : Nat) (v : Node), tGAT ≤ stamp x (i + 1) → stamp x i ≤ tAwakeEnd → HonestG x i v →
       v ∉ crashed x i ∧ state x i v ≠ none
@@ -1430,12 +1373,12 @@ def HealingPhaseG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     Read aloud: from `tGST` on, during the phase, every honest node is online and up.
 
-    Defined as `HealingPhaseG` at the run `x` (`healingPhase_iff`). -/
+    Defined as `HealingPhaseG` at the observation of the run `x` (`healingPhase_iff`). -/
 def HealingPhase {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (tGST tGAT tAwakeEnd : ℝ) (x : Exec Pr) : Prop :=
-  HealingPhaseG tGST tGAT tAwakeEnd x
+  HealingPhaseG tGST tGAT tAwakeEnd (observe id x)
 
-/-- `Execution.MostOfCommittee` over any execution with an `Observable`. A reading of executions.
+/-- `Execution.MostOfCommittee` on an observed run. A reading of executions.
 
     The committee's members are computed from a node's state as the execution records it, of type
     `L` (on a run, its local state `l`, where `Execution.MostOfCommittee` computes them from its
@@ -1443,8 +1386,8 @@ def HealingPhase {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq 
 
     Read aloud: some honest node computes the committee during its sleepiness window, and whenever
     one does, more of its members satisfy `P` than do not. -/
-noncomputable def MostOfCommitteeG {X Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] [Observable X Node Msg L Ev] (x : X)
+noncomputable def MostOfCommitteeG {Node Msg L Ev : Type} [DecidableEq Node]
+    [DecidableEq Msg] (x : ObservedRun Node Msg Ev L)
     (committee : CommitteeSpec Node L) (P : (v : Node) → Prop) : Prop :=
   -- some honest node is online in a configuration in force inside the committee's sleepiness window
   (∃ (v : Node) (i : Nat) (l : L), state x i v = some l ∧ HonestG x i v ∧
@@ -1465,60 +1408,27 @@ noncomputable def MostOfCommitteeG {X Node Msg L Ev : Type} [DecidableEq Node]
     Read aloud: some honest node computes the committee during its sleepiness window, and whenever
     one does, more of its members satisfy `P` than do not.
 
-    Defined as `MostOfCommitteeG` at the run `x` (`Execution.mostOfCommittee_iff`). -/
+    Defined as `MostOfCommitteeG` at the observation of the run `x` (`Execution.mostOfCommittee_iff`). -/
 noncomputable def Execution.MostOfCommittee {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev} (x : Exec Pr)
     (committee : CommitteeSpec Node NodeState) (P : (v : Node) → Prop) : Prop :=
-  MostOfCommitteeG x (committee.comap fun l => l.st) P
+  MostOfCommitteeG (observe id x) (committee.comap fun l => l.st) P
 
-/-- `ObservableWithCommittees X Node Msg L Ev`: the executions `x : X` are
-    observables with their committees. Not part of the bare framework: no step of the framework
-    reads it.
+/-- `CommitteeSleepinessFrom` on an observed run. A condition on executions.
 
-    An observable with its committees is an observable (`Observable`: no protocol and no step
-    relation, only the action of each step and, in each configuration, the real time, the clocks,
-    the node states, the views, the sent envelopes, the corrupted set and the crashed set) together
-    with, for every committee index `ci`, its committee `ci`. The committee conditions on executions
-    (`CommitteeSleepinessFromG`, `AsyncPeriodSleepinessG`) read it. A run of a protocol carries no
-    committees of its own: it is read with given committees through
-    `ObservableWithCommittees.ofCommittees`.
-
-    Read aloud: an execution of type `X` has, besides what an `Observable` has, for every
-    committee index `ci`, its committee `ci`. -/
-class ObservableWithCommittees (X : Type) (Node Msg L Ev : outParam Type) extends
-    Observable X Node Msg L Ev where
-  /-- `committees x ci`: the specification of committee `ci` in the execution `x`: its members as a
-      node computes them from its state as the execution records it (of type `L`), its sleepiness
-      window, and until when it needs the network synchronous. -/
-  committees : (x : X) → (ci : Nat) → CommitteeSpec Node L
-
-/-- The reading of the executions of type `X` that reads each as its `Observable` does, with the
-    committees `committees x ci` given. A reading of an execution, not part of the bare framework.
-    The conditions over the runs of a protocol, `CommitteeSleepinessFrom` and
-    `AsyncPeriodSleepiness`, read a run through it.
-
-    Read aloud: the executions, read as their `Observable` reads them, with the committees
-    `committees`. -/
-abbrev ObservableWithCommittees.ofCommittees {X Node Msg L Ev : Type} [Observable X Node Msg L Ev]
-    (committees : (x : X) → (ci : Nat) → CommitteeSpec Node L) :
-    ObservableWithCommittees X Node Msg L Ev :=
-  { toObservable := inferInstance, committees := committees }
-
-/-- `CommitteeSleepinessFrom` over any execution with an `ObservableWithCommittees`. A condition on
-    executions.
-
-    The committees are the execution's own, `ObservableWithCommittees.committees x ci`, their
-    members computed from a node's state as the execution records it, of type `L` (on a run, its
-    local state `l`, where `CommitteeSleepinessFrom` computes them from its memory state `l.st`).
+    `committees ci` is the specification of committee `ci`, its members computed from a node's
+    value, of type `L` (on a run's observation, its local state `l`, where `CommitteeSleepinessFrom`
+    computes them from its memory state `l.st`).
 
     Read aloud: from `tFrom` on, in every committee, as any honest node computes it during its
     sleepiness window, the members up and honest throughout the window are more than the rest. -/
-noncomputable def CommitteeSleepinessFromG {X Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] [ObservableWithCommittees X Node Msg L Ev] (tFrom : ℝ) (x : X) : Prop :=
-  ∀ ci : Nat, tFrom ≤ (ObservableWithCommittees.committees x ci).sleepinessWindow.tStart →
-    MostOfCommitteeG x (ObservableWithCommittees.committees x ci) fun v =>
-      UpAndHonestThroughoutG x (ObservableWithCommittees.committees x ci).sleepinessWindow.tStart
-        (ObservableWithCommittees.committees x ci).sleepinessWindow.tEnd v
+noncomputable def CommitteeSleepinessFromG {Node Msg L Ev : Type} [DecidableEq Node]
+    [DecidableEq Msg] (committees : (ci : Nat) → CommitteeSpec Node L) (tFrom : ℝ)
+    (x : ObservedRun Node Msg Ev L) : Prop :=
+  ∀ ci : Nat, tFrom ≤ (committees ci).sleepinessWindow.tStart →
+    MostOfCommitteeG x (committees ci) fun v =>
+      UpAndHonestThroughoutG x (committees ci).sleepinessWindow.tStart
+        (committees ci).sleepinessWindow.tEnd v
 
 /-- A condition on executions: committee sleepiness from `tFrom` on. For every committee index `ci`
     whose committee `committees ci` has its sleepiness window starting at or after `tFrom`, as any
@@ -1529,32 +1439,30 @@ noncomputable def CommitteeSleepinessFromG {X Node Msg L Ev : Type} [DecidableEq
     Read aloud: from `tFrom` on, in every committee, as any honest node computes it during its
     sleepiness window, the members up and honest throughout the window are more than the rest.
 
-    Defined as `CommitteeSleepinessFromG` at the run `x` read with the committees `committees`
-    through `ObservableWithCommittees.ofCommittees` (`committeeSleepinessFrom_iff`). -/
+    Defined as `CommitteeSleepinessFromG` at the observation of the run `x`, each committee's
+    members computed from a local state's memory state. -/
 noncomputable def CommitteeSleepinessFrom {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev}
     (committees : (ci : Nat) → CommitteeSpec Node NodeState) (tFrom : ℝ) (x : Exec Pr) : Prop :=
-  @CommitteeSleepinessFromG (Exec Pr) Node Msg (Local Node Msg NodeState) Ev _ _
-    (ObservableWithCommittees.ofCommittees fun _ ci => (committees ci).comap fun l => l.st) tFrom x
+  CommitteeSleepinessFromG (fun ci => (committees ci).comap fun l => l.st) tFrom (observe id x)
 
-/-- `AsyncPeriodSleepiness` over any execution with an `ObservableWithCommittees`. A condition on
-    executions.
+/-- `AsyncPeriodSleepiness` on an observed run. A condition on executions.
 
-    The committees are the execution's own, `ObservableWithCommittees.committees x ci`, their
-    members computed from a node's state as the execution records it, of type `L` (on a run, its
-    local state `l`, where `AsyncPeriodSleepiness` computes them from its memory state `l.st`).
+    `committees ci` is the specification of committee `ci`, its members computed from a node's
+    value, of type `L` (on a run's observation, its local state `l`, where `AsyncPeriodSleepiness`
+    computes them from its memory state `l.st`).
 
     Read aloud: for every committee that needs synchrony until a time during the period or its
     recovery, as any honest node computes it, the members that were up and honest before the period
     and are up and honest through its sleepiness window are more than the rest. -/
-noncomputable def AsyncPeriodSleepinessG {X Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] [ObservableWithCommittees X Node Msg L Ev]
-    (tPreAsync ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery : ℝ) (x : X) : Prop :=
-  ∀ ci : Nat, AffectedByAsync (ObservableWithCommittees.committees x ci) tAsyncStart tAsyncEnd ΔRecovery →
-    MostOfCommitteeG x (ObservableWithCommittees.committees x ci) fun v =>
+noncomputable def AsyncPeriodSleepinessG {Node Msg L Ev : Type} [DecidableEq Node]
+    [DecidableEq Msg] (committees : (ci : Nat) → CommitteeSpec Node L)
+    (tPreAsync ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery : ℝ) (x : ObservedRun Node Msg Ev L) : Prop :=
+  ∀ ci : Nat, AffectedByAsync (committees ci) tAsyncStart tAsyncEnd ΔRecovery →
+    MostOfCommitteeG x (committees ci) fun v =>
       UpAndHonestThroughoutG x (tPreAsync - ΔPreAsync) tPreAsync v ∧
-        UpAndHonestThroughoutG x (ObservableWithCommittees.committees x ci).sleepinessWindow.tStart
-          (ObservableWithCommittees.committees x ci).sleepinessWindow.tEnd v
+        UpAndHonestThroughoutG x (committees ci).sleepinessWindow.tStart
+          (committees ci).sleepinessWindow.tEnd v
 
 /-- A condition on executions: the sleepiness requirement during the asynchronous period. For every
     committee index `ci` whose committee `committees ci` needs synchrony until a time after
@@ -1567,22 +1475,21 @@ noncomputable def AsyncPeriodSleepinessG {X Node Msg L Ev : Type} [DecidableEq N
     recovery, as any honest node computes it, the members that were up and honest before the period
     and are up and honest through its sleepiness window are more than the rest.
 
-    Defined as `AsyncPeriodSleepinessG` at the run `x` read with the committees `committees`
-    through `ObservableWithCommittees.ofCommittees` (`asyncPeriodSleepiness_iff`). -/
+    Defined as `AsyncPeriodSleepinessG` at the observation of the run `x`, each committee's
+    members computed from a local state's memory state. -/
 noncomputable def AsyncPeriodSleepiness {Node Msg NodeState Ev : Type}
     [DecidableEq Node] [DecidableEq Msg] {Pr : Protocol Node Msg NodeState Ev}
     (committees : (ci : Nat) → CommitteeSpec Node NodeState)
     (tPreAsync ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery : ℝ) (x : Exec Pr) : Prop :=
-  @AsyncPeriodSleepinessG (Exec Pr) Node Msg (Local Node Msg NodeState) Ev _ _
-    (ObservableWithCommittees.ofCommittees fun _ ci => (committees ci).comap fun l => l.st) tPreAsync
-    ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery x
+  AsyncPeriodSleepinessG (fun ci => (committees ci).comap fun l => l.st) tPreAsync
+    ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery (observe id x)
 
-/-- `HonestProposerThrough` over any execution with an `Observable`. A condition on executions.
+/-- `HonestProposerThrough` on an observed run. A condition on executions.
 
     Read aloud: one named node is up and honest from the start of its proposal window until
     `tPreAsync`. -/
-def HonestProposerThroughG {X Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    [Observable X Node Msg L Ev] (tAwakeEnd tPreAsync tProposalStart : ℝ) (vProposer : Node) (x : X)
+def HonestProposerThroughG {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+    (tAwakeEnd tPreAsync tProposalStart : ℝ) (vProposer : Node) (x : ObservedRun Node Msg Ev L)
     : Prop :=
   tAwakeEnd ≤ tPreAsync ∧ tProposalStart ≤ tPreAsync ∧
     UpAndHonestThroughoutG x tProposalStart tPreAsync vProposer
@@ -1594,10 +1501,10 @@ def HonestProposerThroughG {X Node Msg L Ev : Type} [DecidableEq Node] [Decidabl
     Read aloud: one named node is up and honest from the start of its proposal window until
     `tPreAsync`.
 
-    Defined as `HonestProposerThroughG` at the run `x` (`honestProposerThrough_iff`). -/
+    Defined as `HonestProposerThroughG` at the observation of the run `x` (`honestProposerThrough_iff`). -/
 def HonestProposerThrough {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     {Pr : Protocol Node Msg NodeState Ev} (tAwakeEnd tPreAsync tProposalStart : ℝ)
     (vProposer : Node) (x : Exec Pr) : Prop :=
-  HonestProposerThroughG tAwakeEnd tPreAsync tProposalStart vProposer x
+  HonestProposerThroughG tAwakeEnd tPreAsync tProposalStart vProposer (observe id x)
 
 end Framework.RealStsMulticastMultisetLog

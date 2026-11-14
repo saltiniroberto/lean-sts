@@ -4,102 +4,32 @@ public import RealStsMulticastMultisetLog.Spec.Execution
 @[expose] public section
 
 /-!
-# Observables: what a condition on executions reads of an execution, as a class
+# Observed runs: what a condition on executions reads of an execution
 
 The conditions on executions of `RealStsMulticastMultisetLog.Spec.Conditions` read a run only
 through a few readings: the action of each step, the real time at which each configuration is
 entered, and, in each configuration, each node's clock, each node's local state (whether it is
 known, and what it is), each node's view, the sent envelopes, the corrupted set and the crashed set.
-The class `Observable` names exactly these readings, and nothing else: an observable has no protocol
-and no step relation. Each condition is written once over the class, so once for every type of
-execution that provides these readings.
+An observed run (`ObservedRun Node Msg Ev V`) is exactly these readings, with a value of a type `V`
+in place of each node's local state, and no step relation. Each condition is written once, on
+observed runs; a condition on a run `x : Exec Pr` is the condition on its observation
+`observe f x`, where `f` reads a local state as a value of `V` (`id` when the condition reads the
+local state itself).
 
 None of this is part of the bare framework. The bare framework is
 `RealStsMulticastMultisetLog.Spec.Protocol` (states and steps) and
-`RealStsMulticastMultisetLog.Spec.Execution` (executions); this page changes neither. It gives two
-instances of the class:
+`RealStsMulticastMultisetLog.Spec.Execution` (executions); this page changes neither.
 
-* `Exec Pr`, the executions of a protocol `Pr`: each reading is the run's own (`x.lbl j`,
-  `x.stamp i`, `x[i].clock p`, `x[i][p]`, `x[i].view p`, `x[i].sent`, `x[i].adv`,
-  `x[i].crashed`);
-* `ObservedRun Node Msg Ev V`, an execution whose configurations carry, for each node, a value
-  of a type `V` in place of its local state, and have no step relation; `observe f x` is the run
-  `x` as observed, with `f` the map from a local state to `V`.
-
-The local state is read through `state`, of a type `L` that the instance fixes: on `Exec Pr` it is
-`Local Node Msg NodeState`, on an observed run it is `V`. A condition that reads what a node's state
-holds (the blocks it holds, what it serves to a peer, the committee information it has) takes that
-reading as a parameter over `L`.
-
+The readings of an observed run `y` are its fields `y.lbl` and `y.stamp`, and `y.clock`,
+`y.state`, `y.view`, `y.sent`, `y.adv`, `y.crashed`, which read the fields of its configurations.
 `HonestG` and `InForceG` are the two readings of `RealStsMulticastMultisetLog.Spec.Execution`,
-`Execution.Honest` and `Execution.InForce`, written over the class. The suffix `G` marks a
-definition written over any type with an `Observable`; the definitions of
-`RealStsMulticastMultisetLog.Spec.Execution` keep their names.
+`Execution.Honest` and `Execution.InForce`, written on observed runs. The suffix `G` marks a
+definition written on observed runs whose run form keeps the name without it.
 -/
 
 set_option autoImplicit false
 
 namespace Framework.RealStsMulticastMultisetLog
-
-/-- The questions a condition may ask about a history: what happened at each step, when it
-    happened, and what each node had seen. Runs and observed runs are observable.
-
-    `Observable X Node Msg L Ev`: the executions `x : X` are observables. Not part of the bare
-    framework: no step of the framework reads it.
-
-    An observable has no protocol and no step relation. It has only what the conditions on
-    executions read: the action of each step, and, for each configuration, the real time at which it
-    is entered, each node's clock, each node's state if known, each node's view, the envelopes sent,
-    the corrupted set and the crashed set. The class asks nothing of these: no step relation ties a
-    configuration to the next, and the real times are not required to be monotone. The runs of a
-    protocol `Pr` (`Exec Pr`) and the observed runs (`ObservedRun Node Msg Ev V`) are
-    instances, so a condition on executions written over the class is written once for both.
-
-    `Node`, `Msg` and `Ev` are the types of the nodes, the messages and the protocol events; `L` is
-    the type of what the execution records of a node's state (on the runs of a protocol, its local
-    state `Local Node Msg NodeState`; on an observed run, its value `V`). All four are fixed by
-    `X`.
-
-    Read aloud: an execution of type `X` has, for every step, its action; for every configuration,
-    the real time it is entered, and in it each node's clock, each node's state if known, each
-    node's view, the envelopes sent, the corrupted set and the crashed set; and nothing else. -/
-class Observable (X : Type) (Node Msg L Ev : outParam Type) where
-  /-- The action of step `j`. -/
-  lbl : X → Nat → Action Node Msg Ev
-  /-- The real time at which configuration `i` is entered; step `i` is taken at
-      `stamp x (i + 1)`. -/
-  stamp : X → Nat → ℝ
-  /-- Node `p`'s clock reading in configuration `i`: `some t` while its clock exists, `none`
-      otherwise. -/
-  clock : X → Nat → Node → Option Time
-  /-- Node `p`'s state in configuration `i`: `some l` when it is known, `none` when it is unknown
-      (before the node first comes online, and from its corruption on). -/
-  state : X → Nat → Node → Option L
-  /-- Node `p`'s view in configuration `i`: the signed messages delivered to it so far. -/
-  view : X → Nat → Node → View Node Msg
-  /-- The envelopes sent up to configuration `i`, with multiplicity. -/
-  sent : X → Nat → Multiset (Envelope Node Msg)
-  /-- The corrupted set of configuration `i`. -/
-  adv : X → Nat → Finset Node
-  /-- The crashed set of configuration `i`. -/
-  crashed : X → Nat → Finset Node
-
-open Observable
-
-/-- The executions of a protocol `Pr` are read by their own readings: the action and the stamps
-    of the execution, and the fields of its configurations, a node's state being its local state
-    `x[i][p]`. A reading of executions, not part of the bare framework. -/
-instance {Node Msg NodeState Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    {Pr : Protocol Node Msg NodeState Ev} :
-    Observable (Exec Pr) Node Msg (Local Node Msg NodeState) Ev where
-  lbl x j := x.lbl j
-  stamp x i := x.stamp i
-  clock x i p := x[i].clock p
-  state x i p := x[i][p]
-  view x i p := x[i].view p
-  sent x i := x[i].sent
-  adv x i := x[i].adv
-  crashed x i := x[i].crashed
 
 /-- A configuration of an observed run: the fields of a configuration of
     `RealStsMulticastMultisetLog.Spec.Protocol`, with a node's value `V` in place of its local
@@ -121,8 +51,8 @@ structure TraceConfig (Node Msg V : Type) where
   /-- The crashed set. -/
   crashed : Finset Node
 
-/-- One history that answers those questions: a run with each node's private state hidden, only
-    what is read of it kept. It is `Observable`.
+/-- What the conditions on executions read of a history: a run with each node's private state
+    hidden, only what is read of it kept.
 
     An observed run is a sequence of configurations (`TraceConfig`), the action of each step, and
     the real time each configuration is entered, with the three conditions on the real time that an
@@ -137,7 +67,7 @@ structure ObservedRun (Node Msg Ev V : Type) where
   cfg : Nat → TraceConfig Node Msg V
   /-- The action of step `j`. -/
   lbl : Nat → Action Node Msg Ev
-  /-- The real time at which configuration `i` is entered. -/
+  /-- The real time at which configuration `i` is entered; step `i` is taken at `stamp (i + 1)`. -/
   stamp : Nat → ℝ
   /-- Real time never goes back. -/
   mono : ∀ i, stamp i ≤ stamp (i + 1)
@@ -146,17 +76,31 @@ structure ObservedRun (Node Msg Ev V : Type) where
   /-- The observed run starts at real time `0`. -/
   init_stamp : stamp 0 = 0
 
-/-- An observed run is read by its own fields, a node's state being its value `V`. A reading of
-    executions, not part of the bare framework. -/
-instance {Node Msg Ev V : Type} : Observable (ObservedRun Node Msg Ev V) Node Msg V Ev where
-  lbl y j := y.lbl j
-  stamp y i := y.stamp i
-  clock y i p := (y.cfg i).clock p
-  state y i p := (y.cfg i).nodes p
-  view y i p := (y.cfg i).view p
-  sent y i := (y.cfg i).sent
-  adv y i := (y.cfg i).adv
-  crashed y i := (y.cfg i).crashed
+namespace ObservedRun
+
+variable {Node Msg Ev V : Type}
+
+/-- Node `p`'s clock reading in configuration `i`: `some t` while its clock exists, `none`
+    otherwise. -/
+def clock (y : ObservedRun Node Msg Ev V) (i : Nat) (p : Node) : Option Time := (y.cfg i).clock p
+
+/-- Node `p`'s value in configuration `i`: `some v` when it is known, `none` when it is unknown
+    (before the node first comes online, and from its corruption on). -/
+def state (y : ObservedRun Node Msg Ev V) (i : Nat) (p : Node) : Option V := (y.cfg i).nodes p
+
+/-- Node `p`'s view in configuration `i`: the signed messages delivered to it so far. -/
+def view (y : ObservedRun Node Msg Ev V) (i : Nat) (p : Node) : View Node Msg := (y.cfg i).view p
+
+/-- The envelopes sent up to configuration `i`, with multiplicity. -/
+def sent (y : ObservedRun Node Msg Ev V) (i : Nat) : Multiset (Envelope Node Msg) := (y.cfg i).sent
+
+/-- The corrupted set of configuration `i`. -/
+def adv (y : ObservedRun Node Msg Ev V) (i : Nat) : Finset Node := (y.cfg i).adv
+
+/-- The crashed set of configuration `i`. -/
+def crashed (y : ObservedRun Node Msg Ev V) (i : Nat) : Finset Node := (y.cfg i).crashed
+
+end ObservedRun
 
 /-- The run `x` as observed. `f` is the map from a local state to a node's value `V`; the result has
     the same actions, stamps, clocks, views, sent envelopes, corrupted and crashed sets, and each
@@ -174,21 +118,21 @@ def observe {Node Msg NodeState Ev V : Type} [DecidableEq Node] [DecidableEq Msg
   progress := x.progress
   init_stamp := x.init_stamp
 
-/-- `Execution.Honest` over any `Observable`: `p` is outside the corrupted set of configuration
-    `i`. A reading of executions, not part of the bare framework.
+open ObservedRun
+
+/-- `Execution.Honest` on an observed run: `p` is outside the corrupted set of configuration `i`.
+    A reading of executions, not part of the bare framework.
 
     Read aloud: `p` is not corrupted in configuration `i`. -/
-def HonestG {X Node Msg L Ev : Type} [Observable X Node Msg L Ev] (x : X) (i : Nat) (p : Node) :
-    Prop :=
-  p ∉ adv x i
+def HonestG {Node Msg Ev V : Type} (y : ObservedRun Node Msg Ev V) (i : Nat) (p : Node) : Prop :=
+  p ∉ adv y i
 
-/-- `Execution.InForce` over any `Observable`: configuration `i` is in force at the real time `s`,
+/-- `Execution.InForce` on an observed run: configuration `i` is in force at the real time `s`,
     entered before `s` and left at `s` or later. A reading of executions, not part of the bare
     framework.
 
     Read aloud: as the real time reaches `s`, configuration `i` is the one the execution is in. -/
-def InForceG {X Node Msg L Ev : Type} [Observable X Node Msg L Ev] (x : X) (i : Nat) (s : ℝ) :
-    Prop :=
-  stamp x i < s ∧ s ≤ stamp x (i + 1)
+def InForceG {Node Msg Ev V : Type} (y : ObservedRun Node Msg Ev V) (i : Nat) (s : ℝ) : Prop :=
+  stamp y i < s ∧ s ≤ stamp y (i + 1)
 
 end Framework.RealStsMulticastMultisetLog
