@@ -1,7 +1,6 @@
 module
 public import RealStsMulticastMultisetLog.Spec.Execution
 public import RealStsMulticastMultisetLog.Spec.Observable
-public import RealStsMulticastMultisetLog.Spec.ValidatorSets
 
 @[expose] public section
 
@@ -24,13 +23,9 @@ a paper assumes.
   and `TickStep` (one of which the three take as their acting steps), and the readings
   `UpBetween`, `UpAndHonestThroughout` and `UpAndHonestUntilActing`.
 * Ticks and the adversary's sends: `TickOncePerReading` and `UnforgeableSends`.
-* One asynchronous period after a healing phase: `WeightBounds` (with
-  `AdversaryUnderIntersectionBy`, `AdversaryUnderQuorumBy` and the reading
-  `InHonestTreeBy`), `HealingPhase`, `CommitteeSleepinessFrom`, `AsyncPeriodSleepiness`
-  (with `AffectedByAsync` and the reading `MostOfCommittee`) and `HonestProposerThrough`;
-  the reading `HonestSentBy`; and a condition on a statement's parameters,
-  `AsyncPeriodEndsInTime`. What they read of the protocol is passed as a parameter, of the types
-  of `RealStsMulticastMultisetLog.Spec.ValidatorSets`.
+
+No condition here is about a particular kind of protocol. A condition that reads what only some
+protocols have (a validator set, committees, blocks) belongs to the project that states it.
 
 ## Each definition is written once, on observed runs
 
@@ -45,12 +40,10 @@ condition on `observe readLocal π`. The readings `x[i].clock p`, `x[i][p]`, `x[
 `x[i].sent`, `x[i].adv`, `x[i].crashed`, `x.lbl j` and `x.stamp i` read an observed run as they read
 a run.
 
-What a condition reads of the protocol is a parameter of it: a reading of a node's value (`serves`,
-the members of a committee, `tree`, the blocks in a node's tree), the committees (`committees ci`,
-the specification of committee `ci`), the validator set at a block (`registry`), who a message's
-object is attributed to and which objects a message includes (`author`, `carries`). On a run a
-node's value is its local state `l`; a parameter that reads the protocol's memory state reads
-`l.st` (for a committee, `CommitteeSpec.comap (fun l => l.st)`).
+What a condition reads of the protocol is a parameter of it: a reading of a node's value
+(`serves`), who a message's object is attributed to and which objects a message includes (`author`,
+`carries`). On a run a node's value is its local state `l`; a parameter that reads the protocol's
+memory state reads `l.st`.
 
 ## Crashes, cut networks, corrupted validators
 
@@ -982,173 +975,3 @@ def UnforgeableSends {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
           (mObject = e.msg ∨ carries e.msg mObject) →
           author mObject = some v → Honest x i v →
           ∃ e' ∈ sent x i, e'.msg = mObject ∨ carries e'.msg mObject)
-
-/-! ### The asynchronous period, the adversary's weight, the healing phase, the committees and the proposers
-
-Conditions that a statement about one asynchronous period after a healing phase takes as hypotheses,
-with the readings of an execution and the parts of the statements they use. What a condition reads
-of the protocol (what a node's state holds, the block a message carries, the validator set at a
-block, the committees) it takes as a parameter; the types of those parameters are on the page
-`RealStsMulticastMultisetLog.Spec.ValidatorSets`. One of the definitions, `AsyncPeriodEndsInTime`,
-reads no execution: it is a condition on a statement's parameters. -/
-
-/-- A condition on the parameters of a statement, which reads no execution and is not part of the
-    bare framework: the asynchronous period and its recovery `ΔRecovery` end by `tPeriodEndBy`, the
-    time by which a proposer's protection needs them to be over.
-
-    Read aloud: the period, plus how long a committee still counts after it, is over by
-    `tPeriodEndBy`. -/
-def AsyncPeriodEndsInTime (tPeriodEndBy tAsyncEnd ΔRecovery : ℝ) : Prop :=
-  tAsyncEnd + ΔRecovery ≤ tPeriodEndBy
-
-/-- Part of the condition on executions `AsyncPeriodSleepiness`, not part of the bare framework:
-    the committee `committee` needs synchrony until a time after `tAsyncStart` and before
-    `tAsyncEnd + ΔRecovery`.
-
-    Read aloud: the committee needs the network synchronous until a time inside the asynchronous
-    period or its recovery. -/
-def AffectedByAsync {Node NodeInfo : Type} (committee : CommitteeSpec Node NodeInfo)
-    (tAsyncStart tAsyncEnd ΔRecovery : ℝ) : Prop :=
-  tAsyncStart < committee.tSyncNeededUntil ∧ committee.tSyncNeededUntil < tAsyncEnd + ΔRecovery
-
-/-- An honest node holds `B` in some configuration of `x` entered at `tBy` or earlier: the node's
-    value is known there, the node is honest there, and `B` is among the blocks `tree` reads of its
-    value. A reading of an execution that the condition on executions `WeightBounds` uses; not part
-    of the bare framework.
-
-    Read aloud: by the real time `tBy`, some honest node has `B` in its tree. -/
-def InHonestTreeBy {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) (tree : (l : L) → Finset Block) (tBy : ℝ) (B : Block) : Prop :=
-  ∃ (i : Nat) (v : Node) (l : L),
-    state x i v = some l ∧ Honest x i v ∧ stamp x i ≤ tBy ∧ B ∈ tree l
-
-/-- An honest node puts an envelope carrying `B` on the wire at some step of `x` taken at `tBy` or
-    earlier: step `i` adds a copy of the envelope `e` to the sent envelopes, `e`'s signer is honest
-    in the configuration the step starts from, and the block `blockOf` reads of `e`'s message is
-    `B` (step `i` is taken at `x.stamp (i + 1)`). A reading of an execution; not part of the bare
-    framework.
-
-    Read aloud: by the real time `tBy`, some honest node has sent `B`. -/
-def HonestSentBy {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) (blockOf : (m : Msg) → Option Block) (tBy : ℝ) (B : Block)
-    : Prop :=
-  ∃ (i : Nat) (e : Envelope Node Msg),
-    e ∈ sent x (i + 1) - sent x i ∧ Honest x i e.sender ∧ stamp x (i + 1) ≤ tBy ∧
-      blockOf e.msg = some B
-
-/-- A condition on executions: in every configuration of `x` entered at `tBy` or earlier, the
-    corrupted set weighs, in `reg`, less than `I(reg, reg')` (`guaranteed reg reg'`), the least
-    weight a quorum under `reg` and a quorum under `reg'` share.
-
-    Read aloud: up to `tBy`, the corrupted validators weigh less than what any two quorums must
-    share. -/
-def AdversaryUnderIntersectionBy {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    (reg reg' : Registry Node) (tBy : ℝ) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
-  ∀ i : Nat, stamp x i ≤ tBy → counted reg (adv x i) < guaranteed reg reg'
-
-/-- A condition on executions: in every configuration of `x` entered at `tBy` or earlier, the
-    corrupted set weighs, in `reg`, less than `reg`'s quorum.
-
-    Read aloud: up to `tBy`, the corrupted validators weigh less than a quorum. -/
-def AdversaryUnderQuorumBy {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    (reg : Registry Node) (tBy : ℝ) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
-  ∀ i : Nat, stamp x i ≤ tBy → counted reg (adv x i) < reg.quorum
-
-/-- A condition on executions: the two weight bounds, per block, in the block's validator set
-    `registry B`, over the blocks in honest nodes' trees (`tree l`, the blocks in the tree of a node
-    whose value is `l`).
-
-    Read aloud: at every block an honest node holds, the validators corrupted by `tAwakeEnd` weigh
-    less than what any two quorums share, and those corrupted by any time `t` less than a quorum. -/
-structure WeightBounds {Node Msg L Ev Block : Type} [DecidableEq Node] [DecidableEq Msg]
-    (tree : (l : L) → Finset Block) (registry : (B : Block) → Registry Node)
-    (tAwakeEnd : ℝ) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop where
-  /-- For every two blocks in honest nodes' trees by `tAwakeEnd`, the validators corrupted by then
-  weigh, in the first block's validator set, less than what a quorum of each must share. -/
-  third : ∀ B B' : Block, InHonestTreeBy x tree tAwakeEnd B → InHonestTreeBy x tree tAwakeEnd B' →
-    AdversaryUnderIntersectionBy (registry B) (registry B') tAwakeEnd x
-  /-- For every real time `t` and every block in an honest node's tree by `t`, the validators
-  corrupted by `t` weigh less than that block's quorum. -/
-  quorum : ∀ (t : ℝ) (B : Block), InHonestTreeBy x tree t B →
-    AdversaryUnderQuorumBy (registry B) t x
-
-/-- A condition on executions: the healing phase `[tGAT, tAwakeEnd]` starts at or after `tGST`, and
-    in every configuration of `x` within it (left at `tGAT` or later, entered at `tAwakeEnd` or
-    earlier), every honest node is outside the crashed set and its local state is known (it has come
-    online). Corruption during the phase is not excluded.
-
-    Read aloud: from `tGST` on, during the phase, every honest node is online and up. -/
-def HealingPhase {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    (tGST tGAT tAwakeEnd : ℝ) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
-  tGST ≤ tGAT ∧ tGAT ≤ tAwakeEnd ∧
-    ∀ (i : Nat) (v : Node), tGAT ≤ stamp x (i + 1) → stamp x i ≤ tAwakeEnd → Honest x i v →
-      v ∉ crashed x i ∧ state x i v ≠ none
-
-/-- Some honest node computes `committee` from its value in a configuration of `x` within
-    the committee's sleepiness window (left at its start or later, entered at its end or earlier),
-    and most members of `committee` satisfy `P` as any honest node computes them from its
-    value in any such configuration. A reading of an execution that the conditions on executions
-    `CommitteeSleepinessFrom` and `AsyncPeriodSleepiness` use; not part of the bare framework.
-
-    Read aloud: some honest node computes the committee during its sleepiness window, and whenever
-    one does, more of its members satisfy `P` than do not. -/
-noncomputable def MostOfCommittee {Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev))
-    (committee : CommitteeSpec Node L) (P : (v : Node) → Prop) : Prop :=
-  -- some honest node is online in a configuration in force inside the committee's sleepiness window
-  (∃ (v : Node) (i : Nat) (l : L), state x i v = some l ∧ Honest x i v ∧
-      committee.sleepinessWindow.tStart ≤ stamp x (i + 1) ∧
-      stamp x i ≤ committee.sleepinessWindow.tEnd) ∧
-  -- and every honest node online in such a configuration computes members most of which satisfy `P`
-  ∀ (v : Node) (i : Nat) (l : L), state x i v = some l → Honest x i v →
-    committee.sleepinessWindow.tStart ≤ stamp x (i + 1) →
-    stamp x i ≤ committee.sleepinessWindow.tEnd →
-    MostOf (committee.members l) P
-
-/-- A condition on executions: committee sleepiness from `tFrom` on. For every committee index `ci`
-    whose committee `committees ci` has its sleepiness window starting at or after `tFrom`, as any
-    honest node computes the members from its value, in a configuration within the window,
-    the members up and honest throughout the window (`UpAndHonestThroughout`) outnumber
-    the rest.
-
-    Read aloud: from `tFrom` on, in every committee, as any honest node computes it during its
-    sleepiness window, the members up and honest throughout the window are more than the rest. -/
-noncomputable def CommitteeSleepinessFrom {Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] (committees : (ci : Nat) → CommitteeSpec Node L) (tFrom : ℝ)
-    (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
-  ∀ ci : Nat, tFrom ≤ (committees ci).sleepinessWindow.tStart →
-    MostOfCommittee x (committees ci) fun v =>
-      UpAndHonestThroughout x (committees ci).sleepinessWindow.tStart
-        (committees ci).sleepinessWindow.tEnd v
-
-/-- A condition on executions: the sleepiness requirement during the asynchronous period. For every
-    committee index `ci` whose committee `committees ci` needs synchrony until a time after
-    `tAsyncStart` and before `tAsyncEnd + ΔRecovery`, as any honest node computes the members from
-    its value, during the committee's sleepiness window, the members up and honest throughout
-    `[tPreAsync − ΔPreAsync, tPreAsync]` and throughout the committee's sleepiness window outnumber
-    the rest.
-
-    Read aloud: for every committee that needs synchrony until a time during the period or its
-    recovery, as any honest node computes it, the members that were up and honest before the period
-    and are up and honest through its sleepiness window are more than the rest. -/
-noncomputable def AsyncPeriodSleepiness {Node Msg L Ev : Type} [DecidableEq Node]
-    [DecidableEq Msg] (committees : (ci : Nat) → CommitteeSpec Node L)
-    (tPreAsync ΔPreAsync tAsyncStart tAsyncEnd ΔRecovery : ℝ) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
-  ∀ ci : Nat, AffectedByAsync (committees ci) tAsyncStart tAsyncEnd ΔRecovery →
-    MostOfCommittee x (committees ci) fun v =>
-      UpAndHonestThroughout x (tPreAsync - ΔPreAsync) tPreAsync v ∧
-        UpAndHonestThroughout x (committees ci).sleepinessWindow.tStart
-          (committees ci).sleepinessWindow.tEnd v
-
-/-- A condition on executions: the honest proposer. `vProposer` is up and honest throughout
-    `[tProposalStart, tPreAsync]` (`UpAndHonestThroughout`), and `tPreAsync` is at or
-    after the end of the healing phase `tAwakeEnd` and at or after `tProposalStart`.
-
-    Read aloud: one named node is up and honest from the start of its proposal window until
-    `tPreAsync`. -/
-def HonestProposerThrough {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
-    (tAwakeEnd tPreAsync tProposalStart : ℝ) (vProposer : Node) (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev))
-    : Prop :=
-  tAwakeEnd ≤ tPreAsync ∧ tProposalStart ≤ tPreAsync ∧
-    UpAndHonestThroughout x tProposalStart tPreAsync vProposer
-

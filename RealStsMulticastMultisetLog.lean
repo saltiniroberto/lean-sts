@@ -2,7 +2,6 @@ module
 public import RealStsMulticastMultisetLog.Spec.Message
 public import RealStsMulticastMultisetLog.Spec.Protocol
 public import RealStsMulticastMultisetLog.Spec.Execution
-public import RealStsMulticastMultisetLog.Spec.ValidatorSets
 public import RealStsMulticastMultisetLog.Spec.Conditions
 
 @[expose] public section
@@ -21,7 +20,7 @@ names its recipients, and the log of sent envelopes is a `Multiset`. How reading
 time, when ticks and deliveries must happen, and every other timing assumption are conditions on
 executions, which statements take as hypotheses.
 
-`Spec/` states the model (`Message`, `Protocol`, `Execution`, `Observable`, `ValidatorSets`,
-`Conditions`), and this module imports it; `Analysis/` proves things about it, and is imported
+`Spec/` states the model (`Message`, `Protocol`, `Execution`, `Observable`, `Conditions`), and this
+module imports it; `Analysis/` proves things about it, and is imported
 page by page.
 -/
