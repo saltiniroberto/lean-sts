@@ -173,7 +173,7 @@ cases, and the view is not touched. No reaction runs at the restart: the node's 
 afterwards is its next tick, delivery or `custom` event. Since the view is kept, a promise that a
 restarted validator receives a message again is stated over the delivery steps after its last
 restart with `keep = false`, not over its view (the conditions on executions
-`DeliveredBeforeActing` and `CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`).
+`NetworkSynchrony` and `CatchUpAfterRestart`, `RealStsMulticastMultisetLog.Spec.Conditions`).
 
 A model whose reactions are atomic assumes `NoCrashDuring`
 (`RealStsMulticastMultisetLog.Spec.Conditions`): no step is a `crashDuring`, so every crash finds
@@ -365,7 +365,7 @@ structure ObservedConfig (Node Msg V : Type) where
       A multiset rather than a set: `∪` is lossy, so a reaction that re-sends a message already in
       the log would leave no trace, and the envelopes a step put on the wire are
       `post.sent - pre.sent` (what `DueBy` reads, part of the conditions on executions
-      `DeliveredBeforeActing` and `CatchUpAfterRestart`,
+      `NetworkSynchrony` and `CatchUpAfterRestart`,
       `RealStsMulticastMultisetLog.Spec.Conditions`).
 
       The price is that multiplicity is observable state: two executions differing only in

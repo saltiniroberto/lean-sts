@@ -58,7 +58,7 @@ namespace Framework.RealStsMulticastMultisetLog
 
     The labels are needed because fairness is a statement about which transitions occur (a tick is
     a transition of its own, and nothing in the step relation forces it to happen), and because
-    the network's conditions on executions (`DeliveredBeforeActing`, `CatchUpAfterRestart`,
+    the network's conditions on executions (`NetworkSynchrony`, `CatchUpAfterRestart`,
     `SyncedWithinBy`) speak of delivery steps: a restart keeps the view, and the view does not
     tell a delivery after the restart from one before it.
 

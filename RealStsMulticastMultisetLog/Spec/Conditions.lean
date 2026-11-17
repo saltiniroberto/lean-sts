@@ -18,7 +18,7 @@ a paper assumes.
 * Clocks and real time: `ClockWithinSkew`, with its instances `ClockNotAhead` and `ClockAtTime`.
 * Fairness: `WeakFair`, `StrongFair`, `ClockAdvancesWithin`, `TicksWithin` (with
   `DiligentWithin`, their conjunction) and `ActsWithinSkew`.
-* The network: `DeliveredBeforeActing`, `CatchUpAfterRestart` and `SyncedWithinBy`, with `DueBy`,
+* The network: `NetworkSynchrony`, `CatchUpAfterRestart` and `SyncedWithinBy`, with `DueBy`,
   the deadline functions `syncDeadline` and `deadlineOutside`, the readings `ActingStep`
   and `TickStep` (one of which the three take as their acting steps), and the readings
   `UpBetween`, `UpAndHonestThroughout` and `UpAndHonestUntilActing`.
@@ -452,7 +452,7 @@ abbrev DiligentWithin {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg
 The network's promise is three conditions on executions, and a statement takes only the ones it
 needs:
 
-* `DeliveredBeforeActing acting dl`: an envelope sent to a node that is up from the sending to its
+* `NetworkSynchrony acting dl`: an envelope sent to a node that is up from the sending to its
   acting step reaches it after the sending and before that step once its deadline has passed;
 * `CatchUpAfterRestart acting dl dlW`: a node that restarted after an envelope was sent to it is
   brought that envelope again after its last restart, once the envelope's deadline from the sending
@@ -477,7 +477,7 @@ local state is known is not corrupted (`corrupt` empties the local state, and no
 corrupted validator one back), so a validator up in a configuration is honest there, and one that
 has not yet come online is not up.
 
-Every sent envelope is covered by `DeliveredBeforeActing` and `CatchUpAfterRestart`. A model in
+Every sent envelope is covered by `NetworkSynchrony` and `CatchUpAfterRestart`. A model in
 which some envelopes are owed nothing (a message gossiped only during a window of its own, say)
 adds a filter as a hypothesis of the two. -/
 
@@ -513,7 +513,7 @@ def TickStep {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
   lbl x k = .tick p
 
 /-- `p` is up in every configuration from `i` to `k`: outside the crashed set, with its local state
-    known. A reading of an execution that the condition on executions `DeliveredBeforeActing` uses;
+    known. A reading of an execution that the condition on executions `NetworkSynchrony` uses;
     not part of the bare framework, which defines no "up".
 
     A validator whose local state is known is not corrupted, so `p` is honest in each of these
@@ -588,7 +588,7 @@ noncomputable def deadlineOutside {Msg : Type} (tGST : ℝ) (ΔDelay : (m : Msg)
 
 /-- The envelope `e` was put on the wire at step `i` and is **due** by the real time `t` under the
     deadline function `dl`: its deadline, read off its message and the real time of its sending, is
-    at most `t`. Part of the conditions on executions `DeliveredBeforeActing` and
+    at most `t`. Part of the conditions on executions `NetworkSynchrony` and
     `CatchUpAfterRestart`; the bare framework does not assume it.
 
     **The formula, clause by clause.**
@@ -677,14 +677,14 @@ def DueBy {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
 
     The condition `i < k` matters only when a deadline may be at most the real time of the sending:
     otherwise an envelope put on the wire at or after step `k` is due after the real time of step
-    `k`. `DeliveredBeforeActing acting (syncDeadline tGST ΔDelay) x` is the network synchronous from
-    `tGST` on, `DeliveredBeforeActing acting (deadlineOutside tGST ΔDelay tAsyncStart tAsyncEnd) x`
+    `k`. `NetworkSynchrony acting (syncDeadline tGST ΔDelay) x` is the network synchronous from
+    `tGST` on, `NetworkSynchrony acting (deadlineOutside tGST ΔDelay tAsyncStart tAsyncEnd) x`
     the same network except during the asynchronous period `[tAsyncStart, tAsyncEnd)`.
 
     Read aloud: whenever an honest node acts at a step `acting` names, every envelope addressed to
     it that was sent while it was up, with the node up since, and whose deadline has passed, was
     delivered to it after that sending and before acting, with no memory-losing restart in between. -/
-def DeliveredBeforeActing {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
+def NetworkSynchrony {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq Msg]
     (acting : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev) → Nat → Node → Prop) (dl : (m : Msg) → (tSend : ℝ) → ℝ)
     (x : ObservedRun (ObservedConfig Node Msg L) (Action Node Msg Ev)) : Prop :=
   ∀ (k : Nat) (p : Node), acting x k p →
@@ -758,7 +758,7 @@ def DeliveredBeforeActing {Node Msg L Ev : Type} [DecidableEq Node] [DecidableEq
 
     This is a push of every earlier envelope to a node that restarted, which a network that does not
     keep a backlog per recipient does not give; a protocol whose nodes fetch what they missed states
-    `SyncedWithinBy` instead. `DeliveredBeforeActing acting dl x` and
+    `SyncedWithinBy` instead. `NetworkSynchrony acting dl x` and
     `CatchUpAfterRestart acting dl dlW x` together owe every envelope addressed to a node that acts
     at a step `acting` names, sent before that step, whose deadline from the sending has passed and,
     when the node restarted since, whose deadline from each such restart has passed.

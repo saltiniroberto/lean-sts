@@ -189,15 +189,15 @@ theorem dueBy_map (dl : (m : Msg) → (tSend : ℝ) → ℝ) (i : Nat) (e : Enve
     DueBy dl (y.map g) i e t ↔ DueBy dl y i e t :=
   Iff.rfl
 
-/-- `DeliveredBeforeActing` on `y.map g` is `DeliveredBeforeActing` on `y`, when the acting steps
+/-- `NetworkSynchrony` on `y.map g` is `NetworkSynchrony` on `y`, when the acting steps
     read on `y.map g` (`actingW`) are those read on `y` (`actingV`). -/
-theorem deliveredBeforeActing_map
+theorem networkSynchrony_map
     (actingW : ObservedRun (ObservedConfig Node Msg W) (Action Node Msg Ev) → Nat → Node → Prop)
     (actingV : ObservedRun (ObservedConfig Node Msg V) (Action Node Msg Ev) → Nat → Node → Prop)
     (hacting : ∀ (k : Nat) (p : Node), actingW (y.map g) k p ↔ actingV y k p)
     (dl : (m : Msg) → (tSend : ℝ) → ℝ) :
-    DeliveredBeforeActing actingW dl (y.map g) ↔ DeliveredBeforeActing actingV dl y := by
-  unfold DeliveredBeforeActing
+    NetworkSynchrony actingW dl (y.map g) ↔ NetworkSynchrony actingV dl y := by
+  unfold NetworkSynchrony
   simp only [hacting, upBetween_map]
   exact Iff.rfl
 
